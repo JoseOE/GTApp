@@ -75,6 +75,12 @@ function RootNavigator() {
   }, [account]);
 
   const theme = Colors[colorScheme ?? 'light'];
+  // Encabezado de las pantallas que se abren encima de las pestañas.
+  const header = {
+    headerStyle: { backgroundColor: theme.headerBackground },
+    headerTitleStyle: { color: theme.headerText },
+    headerTintColor: theme.headerText,
+  };
   // La bienvenida de marca solo aplica a quien ya es miembro con acceso.
   const mostrarBienvenida = !bienvenidaVista && !!gym && account?.hasGymAccess === true;
 
@@ -136,6 +142,10 @@ function RootNavigator() {
               headerTintColor: theme.headerText,
             }}
           />
+
+          {/* Mi cuenta: datos, contraseña y cerrar sesión */}
+          <Stack.Screen name="cuenta" options={{ title: 'Mi cuenta', ...header }} />
+          <Stack.Screen name="cambiar-contrasena" options={{ title: 'Contraseña', ...header }} />
 
           {/* Página de error no encontrada */}
           <Stack.Screen name="+not-found" options={{ title: 'No encontrado' }} />

@@ -8,12 +8,11 @@ import { FontFamily, Spacing } from '@/constants/Theme';
 import { AnimatedTabIcon } from '@/components/ui/AnimatedTabIcon';
 import { AnimatedPressable } from '@/components/ui/AnimatedPressable';
 import { useAccount } from '@/lib/AccountContext';
-import { cancelarRecordatorios } from '@/lib/notifications';
 import { getSession } from '@/lib/session';
 
 export default function TabLayout() {
   const { colors } = useTheme();
-  const { signOut } = useAccount();
+  const { account } = useAccount();
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -25,6 +24,12 @@ export default function TabLayout() {
       setReady(true);
     });
   }, []);
+
+  // Quien entró con la contraseña que le dio recepción tiene que cambiarla antes de seguir.
+  const temporal = ready && account?.contrasenaTemporal === true;
+  useEffect(() => {
+    if (temporal) router.push('/cambiar-contrasena');
+  }, [temporal]);
 
   if (!ready) return <View style={{ flex: 1, backgroundColor: colors.background }} />;
 
@@ -44,15 +49,11 @@ export default function TabLayout() {
         headerTintColor: colors.headerText,
         headerRight: () => (
           <AnimatedPressable
-            onPress={async () => {
-              // Los recordatorios locales son de este usuario: se van con él.
-              await cancelarRecordatorios();
-              await signOut();
-              router.replace('/(auth)/login');
-            }}
+            onPress={() => router.push('/cuenta')}
             hitSlop={10}
+            accessibilityLabel="Mi cuenta"
             style={{ paddingHorizontal: Spacing.lg }}>
-            <Ionicons name="log-out-outline" size={22} color={colors.headerText} />
+            <Ionicons name="person-circle-outline" size={24} color={colors.headerText} />
           </AnimatedPressable>
         ),
       }}>
