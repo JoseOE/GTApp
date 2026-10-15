@@ -296,3 +296,28 @@ export const MESES_SIN_INTERESES: [number, number][] = [
   [9, 900],
   [12, 1200],
 ];
+
+// ─── PayPal (simulador) ───
+
+export type OrdenPaypal = { id: string; monto: number; moneda: string; aprobarUrl: string };
+
+// returnUrl/cancelUrl: los enlaces de la app a los que vuelve el navegador
+// después de aprobar o cancelar. recordar: al pagar, la cuenta queda vinculada.
+export function crearOrdenPaypal(returnUrl: string, cancelUrl: string, recordar: boolean) {
+  return request<OrdenPaypal>(`/api/simuladores/paypal/ordenes?${CANAL}`, {
+    method: 'POST',
+    body: JSON.stringify({ returnUrl, cancelUrl, recordar }),
+  });
+}
+
+// La cuenta PayPal vinculada: con ella se paga con solo confirmar. No se
+// guarda contraseña ni tarjeta.
+export type VinculoPaypal = { vinculada: boolean; cuenta?: string; nombre?: string; desde?: string };
+
+export function fetchVinculoPaypal() {
+  return request<VinculoPaypal>('/api/simuladores/paypal/vinculo');
+}
+
+export function desvincularPaypal() {
+  return request<VinculoPaypal>('/api/simuladores/paypal/vinculo', { method: 'DELETE' });
+}
