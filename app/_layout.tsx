@@ -16,6 +16,7 @@ import { useColorScheme } from '@/components/useColorScheme';
 import Colors from '@/constants/Colors';
 import { GymBrandContext } from '@/hooks/useTheme';
 import { AccountProvider, useAccount } from '@/lib/AccountContext';
+import { CarritoProvider } from '@/lib/CarritoContext';
 import { GymSplash } from '@/components/GymSplash';
 import { pedirPermiso, registrarParaPushRemoto, reprogramarRecordatorioDePago } from '@/lib/notifications';
 import { hexToRgb } from '@/lib/color';
@@ -43,7 +44,9 @@ export default function RootLayout() {
 
   return (
     <AccountProvider>
-      <RootNavigator />
+      <CarritoProvider>
+        <RootNavigator />
+      </CarritoProvider>
     </AccountProvider>
   );
 }
@@ -142,6 +145,10 @@ function RootNavigator() {
               headerTintColor: theme.headerText,
             }}
           />
+
+          {/* Tienda del gimnasio */}
+          <Stack.Screen name="producto/[id]" options={{ title: 'Producto', ...header }} />
+          <Stack.Screen name="carrito" options={{ title: 'Tu carrito', ...header }} />
 
           {/* Mi cuenta: datos, contraseña y cerrar sesión */}
           <Stack.Screen name="cuenta" options={{ title: 'Mi cuenta', ...header }} />

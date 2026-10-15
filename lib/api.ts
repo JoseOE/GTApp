@@ -57,7 +57,7 @@ export async function authHeaders(): Promise<Record<string, string>> {
   return { Authorization: `Bearer ${session.token}`, 'X-User-Id': session.userId };
 }
 
-async function request<T>(path: string, options?: RequestInit): Promise<T> {
+export async function request<T>(path: string, options?: RequestInit): Promise<T> {
   let res: Response;
   try {
     res = await fetch(`${API_BASE_URL}${path}`, {
