@@ -89,6 +89,13 @@ export async function request<T>(path: string, options?: RequestInit): Promise<T
   return body as T;
 }
 
+// El servidor de Render se duerme tras un rato sin uso y la primera llamada
+// lo despierta (puede tardar casi un minuto). Esta ruta pública no hace nada:
+// solo sirve para despertarlo antes de que haga falta. Los errores no importan.
+export function despertarServidor() {
+  fetch(`${API_BASE_URL}/api/tienda/estado`).catch(() => {});
+}
+
 export type Role = 'owner' | 'member';
 export type MembershipStatus = 'none' | 'pending' | 'active' | 'inactive';
 

@@ -17,7 +17,7 @@ import { saveSession } from '@/lib/session';
 
 export default function RegisterScreen() {
   const { colors, brand } = useTheme();
-  const { reload } = useAccount();
+  const { establecer } = useAccount();
   const [nombre, setNombre] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -39,7 +39,8 @@ export default function RegisterScreen() {
     try {
       const account = await registerRequest(nombre.trim(), email.trim(), password);
       await saveSession({ userId: account.id, nombre: account.nombre, token: account.token });
-      await reload();
+      // El registro ya trae la cuenta completa: no hace falta pedirla otra vez.
+      establecer(account);
       router.replace('/(tabs)');
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'No se pudo crear tu cuenta.');
