@@ -98,6 +98,15 @@ export default function TabLayout() {
           ),
         }}
       />
+      <Tabs.Screen
+        name="tienda"
+        options={{
+          title: 'Tienda',
+          tabBarIcon: ({ color, focused }) => (
+            <AnimatedTabIcon name={focused ? 'bag-handle' : 'bag-handle-outline'} color={color} focused={focused} />
+          ),
+        }}
+      />
     </Tabs>
   );
 }
