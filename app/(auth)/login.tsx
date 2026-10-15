@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -10,18 +10,35 @@ import { Reveal } from '@/components/ui/Reveal';
 import { AnimatedPressable } from '@/components/ui/AnimatedPressable';
 import { ErrorBox, Field } from '@/components/ui/Field';
 import { FontFamily, Spacing } from '@/constants/Theme';
-import { ApiError, loginRequest } from '@/lib/api';
+import { ApiError, despertarServidor, loginRequest } from '@/lib/api';
 import { useAccount } from '@/lib/AccountContext';
 import { saveSession } from '@/lib/session';
 
 export default function LoginScreen() {
   const { colors, brand } = useTheme();
-  const { reload } = useAccount();
+  const { establecer } = useAccount();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lento, setLento] = useState(false);
+
+  // Mientras escribes, se despierta al servidor (en Render se duerme si nadie
+  // lo usa): así "Entrar" no carga también con el arranque.
+  useEffect(() => {
+    despertarServidor();
+  }, []);
+
+  // Si tarda, que se sepa por qué.
+  useEffect(() => {
+    if (!loading) {
+      setLento(false);
+      return;
+    }
+    const t = setTimeout(() => setLento(true), 4000);
+    return () => clearTimeout(t);
+  }, [loading]);
 
   async function handleLogin() {
     if (!email.trim() || !password) {
@@ -33,9 +50,9 @@ export default function LoginScreen() {
     try {
       const account = await loginRequest(email.trim(), password);
       await saveSession({ userId: account.id, nombre: account.nombre, token: account.token });
-      // Carga la cuenta antes de navegar para que el color y el logo del
-      // gimnasio ya estén listos cuando aparezca la primera pantalla.
-      await reload();
+      // El login ya trae la cuenta completa (la misma de /me), con el color y
+      // el logo del gimnasio: se usa tal cual, sin una segunda llamada.
+      establecer(account);
       router.replace('/(tabs)');
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'No se pudo iniciar sesión.');
@@ -86,6 +103,11 @@ export default function LoginScreen() {
             {error ? <ErrorBox message={error} /> : null}
 
             <PrimaryButton label="Entrar" icon="log-in-outline" onPress={handleLogin} loading={loading} />
+            {lento ? (
+              <Text style={[styles.helper, { color: colors.textSecondary }]}>
+                Despertando el servidor… la primera vez del día puede tardar hasta un minuto.
+              </Text>
+            ) : null}
 
             <AnimatedPressable
               onPress={() => router.push('/(auth)/register')}
