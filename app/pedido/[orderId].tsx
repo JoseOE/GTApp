@@ -12,6 +12,7 @@ import { ImagenProtegida } from '@/components/ui/ImagenProtegida';
 import { Desglose } from '@/components/tienda/Desglose';
 import { EntregaBadge, EstadoBadge } from '@/components/tienda/EstadoPedido';
 import { FichaPaynet } from '@/components/tienda/FichaPaynet';
+import { AccionesComprobante } from '@/components/tienda/AccionesComprobante';
 import { FontFamily, Radius, Spacing } from '@/constants/Theme';
 import { ApiError } from '@/lib/api';
 import { dinero, fechaLarga } from '@/lib/formato';
@@ -158,6 +159,8 @@ export default function PedidoScreen() {
             <Text style={[styles.meta, { color: colors.textSecondary }]}>{pedido.detallePago}</Text>
           ) : null}
         </Card>
+
+        <AccionesComprobante pedido={pedido} />
       </ScrollView>
     </SafeAreaView>
   );
