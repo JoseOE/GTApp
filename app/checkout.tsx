@@ -16,6 +16,7 @@ import { FilaLogos, type Logo } from '@/components/checkout/LogoPago';
 import { descripcionTarjeta, MetodoTarjeta } from '@/components/checkout/MetodoTarjeta';
 import { ModalAdvertencia } from '@/components/checkout/ModalAdvertencia';
 import { ModalConfirmar } from '@/components/checkout/ModalConfirmar';
+import { TIENDAS_EFECTIVO } from '@/components/tienda/FichaPaynet';
 import { FontFamily, Radius, Spacing } from '@/constants/Theme';
 import { ApiError } from '@/lib/api';
 import { useAccount } from '@/lib/AccountContext';
@@ -44,6 +45,12 @@ const METODOS: Metodo[] = [
     titulo: 'Tarjeta de crédito o débito',
     descripcion: 'Meses sin intereses con tarjeta de crédito.',
     logos: ['visa', 'mastercard', 'amex'],
+  },
+  {
+    id: 'paynet',
+    titulo: 'Efectivo en tiendas',
+    descripcion: 'Te damos una ficha con código de barras; tienes 72 horas para pagarla.',
+    logos: TIENDAS_EFECTIVO,
   },
 ];
 
