@@ -111,6 +111,17 @@ export default function TiendaScreen() {
         </Card>
       ) : null}
 
+      {comprador ? (
+        <AnimatedPressable
+          onPress={() => router.push('/pedidos')}
+          haptic={false}
+          style={[styles.misPedidos, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Ionicons name="receipt-outline" size={18} color={brand.primaryDark} />
+          <Text style={[styles.misPedidosTexto, { color: colors.text }]}>Mis pedidos</Text>
+          <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} />
+        </AnimatedPressable>
+      ) : null}
+
       {/* Arriba de todo, mientras no se esté buscando ni filtrando. */}
       {!busqueda && !categoria ? <CarruselDestacados gymId={gymId} /> : null}
 
@@ -247,6 +258,16 @@ const styles = StyleSheet.create({
   lista: { padding: Spacing.xl, gap: Spacing.md },
   aviso: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, borderWidth: 1.5, paddingVertical: Spacing.md },
   avisoTexto: { flex: 1, fontSize: 12.5, lineHeight: 17 },
+  misPedidos: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    borderWidth: 1,
+    borderRadius: Radius.md,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+  },
+  misPedidosTexto: { flex: 1, fontFamily: FontFamily.semiBold, fontSize: 14 },
   buscador: {
     flexDirection: 'row',
     alignItems: 'center',
