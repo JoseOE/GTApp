@@ -20,6 +20,7 @@ import { Badge } from '@/components/ui/Badge';
 import { StateCard } from '@/components/ui/StateCard';
 import { AnimatedPressable } from '@/components/ui/AnimatedPressable';
 import { Estrellas } from '@/components/tienda/Estrellas';
+import { CarruselDestacados } from '@/components/tienda/CarruselDestacados';
 import { FontFamily, Radius, Shadow, Spacing } from '@/constants/Theme';
 import { ApiError } from '@/lib/api';
 import { useAccount, useAccountRefreshOnFocus } from '@/lib/AccountContext';
@@ -109,6 +110,9 @@ export default function TiendaScreen() {
           </Text>
         </Card>
       ) : null}
+
+      {/* Arriba de todo, mientras no se esté buscando ni filtrando. */}
+      {!busqueda && !categoria ? <CarruselDestacados gymId={gymId} /> : null}
 
       <View style={[styles.buscador, { backgroundColor: colors.surface, borderColor: colors.border }]}>
         <Ionicons name="search" size={18} color={colors.textSecondary} />
