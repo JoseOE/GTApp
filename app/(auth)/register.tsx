@@ -38,7 +38,7 @@ export default function RegisterScreen() {
     setLoading(true);
     try {
       const account = await registerRequest(nombre.trim(), email.trim(), password);
-      await saveSession({ userId: account.id, nombre: account.nombre });
+      await saveSession({ userId: account.id, nombre: account.nombre, token: account.token });
       await reload();
       router.replace('/(tabs)');
     } catch (err) {

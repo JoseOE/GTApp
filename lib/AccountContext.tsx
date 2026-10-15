@@ -1,9 +1,9 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
-import { AppState } from 'react-native';
-import { useFocusEffect } from 'expo-router';
+import { Alert, AppState } from 'react-native';
+import { router, useFocusEffect } from 'expo-router';
 
-import { ApiError, fetchAccount, type Account } from './api';
-import { clearSession, getSession } from './session';
+import { ApiError, fetchAccount, logoutRequest, type Account } from './api';
+import { clearSession, getSession, onSesionVencida } from './session';
 
 type AccountState = {
   account: Account | null;
@@ -43,8 +43,8 @@ export function AccountProvider({ children }: { children: ReactNode }) {
       setAccount(await fetchAccount(session.userId));
       setError(null);
     } catch (err) {
-      // Si la cuenta ya no existe en la base, la sesión local sobra.
-      if (err instanceof ApiError && err.status === 404) {
+      // Si la cuenta ya no existe en la base, o la sesión venció, la sesión local sobra.
+      if (err instanceof ApiError && (err.status === 404 || err.status === 401)) {
         await clearSession();
         setAccount(null);
       } else {
@@ -57,9 +57,24 @@ export function AccountProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signOut = useCallback(async () => {
+    // Se cierra también en el servidor; si no hay red, la sesión local se va igual.
+    await logoutRequest().catch(() => {});
     await clearSession();
     setAccount(null);
   }, []);
+
+  // El servidor dijo que la sesión venció (o se cerró al cambiar la contraseña
+  // en otro dispositivo): la API ya borró el token, aquí se vuelve al login.
+  useEffect(
+    () =>
+      onSesionVencida(() => {
+        setAccount(null);
+        setError(null);
+        router.replace('/(auth)/login');
+        Alert.alert('Tu sesión venció', 'Inicia sesión de nuevo para continuar.');
+      }),
+    []
+  );
 
   useEffect(() => {
     reload();
