@@ -16,6 +16,9 @@ import { FilaLogos, type Logo } from '@/components/checkout/LogoPago';
 import { descripcionTarjeta, MetodoTarjeta } from '@/components/checkout/MetodoTarjeta';
 import { ModalAdvertencia } from '@/components/checkout/ModalAdvertencia';
 import { ModalConfirmar } from '@/components/checkout/ModalConfirmar';
+import { TIENDAS_EFECTIVO } from '@/components/tienda/FichaPaynet';
+import { MetodoPaypal } from '@/components/checkout/MetodoPaypal';
+import { aprobarEnPaypal } from '@/lib/paypal';
 import { FontFamily, Radius, Spacing } from '@/constants/Theme';
 import { ApiError } from '@/lib/api';
 import { useAccount } from '@/lib/AccountContext';
@@ -23,6 +26,7 @@ import { useCarrito } from '@/lib/CarritoContext';
 import { dinero } from '@/lib/formato';
 import {
   fetchVendedor,
+  fetchVinculoPaypal,
   pagarCarrito,
   TERMINOS_VERSION,
   urlPrivacidad,
@@ -32,6 +36,7 @@ import {
   type MetodoPago,
   type TarjetaTokenizada,
   type Vendedor,
+  type VinculoPaypal,
 } from '@/lib/tienda';
 
 type Metodo = { id: MetodoPago; titulo: string; descripcion: string; logos: Logo[] };
@@ -44,6 +49,18 @@ const METODOS: Metodo[] = [
     titulo: 'Tarjeta de crédito o débito',
     descripcion: 'Meses sin intereses con tarjeta de crédito.',
     logos: ['visa', 'mastercard', 'amex'],
+  },
+  {
+    id: 'paypal',
+    titulo: 'PayPal',
+    descripcion: 'Apruebas el pago en PayPal, o con solo confirmar si vinculaste tu cuenta.',
+    logos: ['paypal'],
+  },
+  {
+    id: 'paynet',
+    titulo: 'Efectivo en tiendas',
+    descripcion: 'Te damos una ficha con código de barras; tienes 72 horas para pagarla.',
+    logos: TIENDAS_EFECTIVO,
   },
 ];
 
@@ -60,6 +77,9 @@ export default function CheckoutScreen() {
   const [metodo, setMetodo] = useState<MetodoPago>('stripe');
   const [tarjeta, setTarjeta] = useState<TarjetaTokenizada | null>(null);
   const [meses, setMeses] = useState(1);
+  const [vinculo, setVinculo] = useState<VinculoPaypal | null>(null);
+  const [usarVinculo, setUsarVinculo] = useState(true);
+  const [recordar, setRecordar] = useState(false);
   const [paso, setPaso] = useState<Paso>(null);
   const [aceptoAdvertencia, setAceptoAdvertencia] = useState(false);
   const [avisoTerminos, setAvisoTerminos] = useState<string | null>(null);
@@ -74,6 +94,7 @@ export default function CheckoutScreen() {
 
   useEffect(() => {
     if (gymId) fetchVendedor(gymId).then(setVendedor).catch(() => {});
+    fetchVinculoPaypal().then(setVinculo).catch(() => {});
   }, [gymId]);
 
   if (!carrito || carrito.items.length === 0) {
@@ -97,6 +118,7 @@ export default function CheckoutScreen() {
   // Productos que piden aceptar la advertencia sanitaria (sin repetir).
   const conAdvertencia = [...new Set(carrito.items.filter((i) => i.requiereAdvertencia).map((i) => i.titulo))];
   const razon = vendedor?.razonSocial || vendedor?.nombre || gymNombre;
+  const conVinculo = metodo === 'paypal' && !!vinculo?.vinculada && usarVinculo;
 
   // Qué le falta al método elegido para poder cobrar.
   function faltaParaPagar(): string | null {
@@ -106,12 +128,26 @@ export default function CheckoutScreen() {
 
   function formaDePago(): string {
     if (metodo === 'stripe' && tarjeta) return descripcionTarjeta(tarjeta, meses, total);
+    if (metodo === 'paypal') return conVinculo ? `PayPal · cuenta vinculada ${vinculo?.cuenta}` : 'PayPal (lo apruebas en la página de PayPal)';
     return METODOS.find((m) => m.id === metodo)?.titulo ?? '';
   }
 
   // Lo que el método manda al servidor. null = la persona canceló a medio camino.
   async function datosDelMetodo(): Promise<Record<string, unknown> | null> {
     if (metodo === 'stripe' && tarjeta) return meses > 1 ? { token: tarjeta.token, meses } : { token: tarjeta.token };
+    if (metodo === 'paypal') {
+      if (conVinculo) return { vinculo: true };
+      // La confirmación y el consentimiento ya se dieron: se reúsan al volver.
+      // Se espera a que cierre la hoja de confirmación: iOS no abre el
+      // navegador mientras otra vista se está cerrando.
+      await new Promise((listo) => setTimeout(listo, 400));
+      const r = await aprobarEnPaypal(recordar);
+      if (!r.aprobado) {
+        setError('Cancelaste el pago en PayPal. No se hizo ningún cargo.');
+        return null;
+      }
+      return { token: r.token, payerId: r.payerId };
+    }
     return {};
   }
 
@@ -158,6 +194,12 @@ export default function CheckoutScreen() {
         setError(e.message);
         // El token de la tarjeta se gasta al intentar cobrar: hay que capturarla otra vez.
         if (metodo === 'stripe' && (e.status === 402 || /tarjeta/i.test(e.message))) setTarjeta(null);
+        // La cuenta PayPal se desvinculó en otro lado: vuelve el flujo normal.
+        if (conVinculo && /vinculad/i.test(e.message)) {
+          setVinculo({ vinculada: false });
+          setUsarVinculo(false);
+        }
+        if (metodo === 'paypal' && recordar) fetchVinculoPaypal().then(setVinculo).catch(() => {});
       }
     } finally {
       setProcesando(false);
@@ -223,6 +265,18 @@ export default function CheckoutScreen() {
             </Card>
           ) : null}
 
+          {metodo === 'paypal' ? (
+            <Card>
+              <MetodoPaypal
+                vinculo={vinculo}
+                usarVinculo={usarVinculo}
+                onUsarVinculo={setUsarVinculo}
+                recordar={recordar}
+                onRecordar={setRecordar}
+              />
+            </Card>
+          ) : null}
+
           {error ? <ErrorBox message={error} /> : null}
 
           <PrimaryButton label={`Pagar ${dinero(total)}`} icon="lock-closed" onPress={iniciarPago} loading={procesando} />
@@ -258,6 +312,7 @@ export default function CheckoutScreen() {
         totales={carrito}
         formaDePago={formaDePago()}
         aviso={avisoTerminos}
+        confirmarTexto={metodo === 'paypal' && !conVinculo ? 'Confirmar e ir a PayPal' : undefined}
         onCancelar={() => setPaso(null)}
         onConfirmar={pagar}
       />

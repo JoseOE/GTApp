@@ -1,5 +1,6 @@
+import { useCallback, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useTheme } from '@/hooks/useTheme';
@@ -8,15 +9,46 @@ import { Badge } from '@/components/ui/Badge';
 import { IconCircle } from '@/components/ui/IconCircle';
 import { ListRow } from '@/components/ui/ListRow';
 import { FontFamily, Spacing } from '@/constants/Theme';
+import { ApiError } from '@/lib/api';
 import { useAccount, useAccountRefreshOnFocus } from '@/lib/AccountContext';
 import { cancelarRecordatorios } from '@/lib/notifications';
+import { desvincularPaypal, fetchVinculoPaypal, type VinculoPaypal } from '@/lib/tienda';
 
 // Mi cuenta: quién eres, tu gimnasio y lo que se hace con la cuenta
-// (contraseña, cerrar sesión).
+// (pedidos, PayPal vinculado, contraseña, cerrar sesión).
 export default function CuentaScreen() {
   const { colors } = useTheme();
   const { account, signOut } = useAccount();
   useAccountRefreshOnFocus();
+  const [paypal, setPaypal] = useState<VinculoPaypal | null>(null);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!account?.gymId) return;
+      fetchVinculoPaypal().then(setPaypal).catch(() => {});
+    }, [account?.gymId])
+  );
+
+  function desvincular() {
+    Alert.alert(
+      'Desvincular PayPal',
+      `La próxima compra con PayPal tendrás que aprobarla en su página. ¿Desvinculamos ${paypal?.cuenta}?`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Desvincular',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setPaypal(await desvincularPaypal());
+            } catch (err) {
+              Alert.alert('No se pudo desvincular', err instanceof ApiError ? err.message : 'Inténtalo de nuevo.');
+            }
+          },
+        },
+      ]
+    );
+  }
 
   function cerrarSesion() {
     Alert.alert('Cerrar sesión', '¿Quieres salir de tu cuenta en este teléfono?', [
@@ -61,7 +93,16 @@ export default function CuentaScreen() {
                 label="Mis pedidos"
                 hint="Comprobantes y el QR para recoger en recepción"
                 onPress={() => router.push('/pedidos')}
+                bordered={!!paypal?.vinculada}
               />
+              {paypal?.vinculada ? (
+                <ListRow
+                  icon="logo-paypal"
+                  label="PayPal vinculado"
+                  hint={`${paypal.cuenta} · toca para desvincular`}
+                  onPress={desvincular}
+                />
+              ) : null}
             </Card>
           </>
         ) : null}
