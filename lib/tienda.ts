@@ -1,4 +1,4 @@
-import { request } from './api';
+import { API_BASE_URL, request } from './api';
 
 // La tienda del gimnasio, desde la app. El servidor es GTWeb: estas son las
 // mismas rutas que usa la tienda de la página, con ?canal=app en el carrito
@@ -223,3 +223,76 @@ export function fetchPedido(orderId: string) {
 
 // Rutas de las imágenes protegidas: se piden con los encabezados de la sesión.
 export const rutaQrPedido = (orderId: string) => `/api/recibos/pedidos/${orderId}/qr.png`;
+
+// ─── Pago ───
+
+// Quién vende: los datos públicos del gimnasio (razón social, RFC...), que se
+// muestran en "¿Confirmas tu compra?".
+export type Vendedor = {
+  id: string;
+  nombre: string;
+  razonSocial?: string | null;
+  rfc?: string | null;
+  correoContacto?: string | null;
+  direccion?: string | null;
+  telefono?: string | null;
+};
+
+export function fetchVendedor(gymId: string) {
+  return request<Vendedor>(`/api/gyms/${gymId}`);
+}
+
+// Versión vigente de los términos de compra (Legal.VERSION en GTWeb). Si el
+// servidor responde 409 "Los términos de compra cambiaron", hay que volver a
+// mostrarlos y aceptarlos.
+export const TERMINOS_VERSION = '1';
+
+export const urlTerminos = (gymId: string) => `${API_BASE_URL}/terminos.html?gym=${encodeURIComponent(gymId)}`;
+export const urlPrivacidad = (gymId: string) => `${API_BASE_URL}/privacidad.html?gym=${encodeURIComponent(gymId)}`;
+
+export type Consentimiento = {
+  terminosVersion: string;
+  aceptaTerminos: boolean;
+  // true solo si se mostró y se aceptó la advertencia sanitaria.
+  aceptaAdvertencia: boolean;
+};
+
+export type MetodoPago = 'stripe' | 'paynet' | 'paypal';
+
+//  - 200 → el pedido;
+//  - 400 → falta aceptar algo (el mensaje se muestra tal cual);
+//  - 402 → el simulador rechazó el pago;
+//  - 409 → el carrito cambió ("avisos" y "carrito" corregido) o los términos cambiaron.
+export function pagarCarrito(metodo: MetodoPago, datos: Record<string, unknown>, totalVisto: number, consentimiento: Consentimiento) {
+  return request<Pedido>(`/api/tienda/carrito/checkout?${CANAL}`, {
+    method: 'POST',
+    body: JSON.stringify({ metodo, datos, totalVisto, consentimiento }),
+  });
+}
+
+// ─── Tarjeta (simulador de Stripe) ───
+
+export type TarjetaTokenizada = {
+  token: string;
+  marca: 'visa' | 'mastercard' | 'amex' | string;
+  ultimos4: string;
+  vencimiento: string;
+  tipo: 'credito' | 'debito';
+};
+
+// El número y el CVC solo viajan aquí, una vez: después la app usa el token.
+export function tokenizarTarjeta(tarjeta: { numero: string; titular: string; mes: string; anio: string; cvc: string }) {
+  return request<TarjetaTokenizada>('/api/simuladores/stripe/tokens', {
+    method: 'POST',
+    body: JSON.stringify(tarjeta),
+  });
+}
+
+// Meses sin intereses (solo crédito) y la compra mínima de cada plazo: la
+// misma tabla que SimuladorStripeService.MESES_SIN_INTERESES.
+export const MESES_SIN_INTERESES: [number, number][] = [
+  [3, 300],
+  [6, 600],
+  [9, 900],
+  [12, 1200],
+];

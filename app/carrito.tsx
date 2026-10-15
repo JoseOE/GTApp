@@ -8,6 +8,7 @@ import { useTheme } from '@/hooks/useTheme';
 import { Card } from '@/components/ui/Card';
 import { StateCard } from '@/components/ui/StateCard';
 import { AnimatedPressable } from '@/components/ui/AnimatedPressable';
+import { PrimaryButton } from '@/components/ui/PrimaryButton';
 import { Avisos, Desglose } from '@/components/tienda/Desglose';
 import { FontFamily, Radius, Spacing } from '@/constants/Theme';
 import { ApiError } from '@/lib/api';
@@ -101,6 +102,8 @@ export default function CarritoScreen() {
             </Card>
 
             <Desglose carrito={carrito} />
+
+            <PrimaryButton label="Continuar al pago" icon="card-outline" onPress={() => router.push('/checkout')} />
 
             <View style={styles.recoger}>
               <Ionicons name="storefront-outline" size={16} color={colors.textSecondary} />
