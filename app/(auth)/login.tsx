@@ -32,7 +32,7 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       const account = await loginRequest(email.trim(), password);
-      await saveSession({ userId: account.id, nombre: account.nombre });
+      await saveSession({ userId: account.id, nombre: account.nombre, token: account.token });
       // Carga la cuenta antes de navegar para que el color y el logo del
       // gimnasio ya estén listos cuando aparezca la primera pantalla.
       await reload();

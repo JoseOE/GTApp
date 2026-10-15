@@ -1,6 +1,8 @@
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 
+import { avisarSesionVencida, clearSession, getSession } from './session';
+
 // Por defecto la app habla con el backend publicado en Render. Para probar
 // contra un backend local, define EXPO_PUBLIC_API_URL=local (usa el puerto
 // 8080 de la máquina que corre Metro) o una URL completa.
@@ -36,18 +38,35 @@ export const API_BASE_URL = resolveApiBaseUrl();
 
 export class ApiError extends Error {
   status: number;
-  constructor(message: string, status = 0) {
+  // El resto del cuerpo del error: p. ej. "avisos" y "carrito" cuando el
+  // carrito cambió justo antes de pagar.
+  data: Record<string, unknown>;
+  constructor(message: string, status = 0, data: Record<string, unknown> = {}) {
     super(message);
     this.status = status;
+    this.data = data;
   }
+}
+
+// Encabezados de la sesión: el token y, mientras el servidor esté en
+// transición (EXIGIR_TOKEN=false), también el X-User-Id de siempre. Las
+// imágenes y los PDF protegidos los usan igual que las llamadas a la API.
+export async function authHeaders(): Promise<Record<string, string>> {
+  const session = await getSession();
+  if (!session) return {};
+  return { Authorization: `Bearer ${session.token}`, 'X-User-Id': session.userId };
 }
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   let res: Response;
   try {
     res = await fetch(`${API_BASE_URL}${path}`, {
-      headers: { 'Content-Type': 'application/json' },
       ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(await authHeaders()),
+        ...(options?.headers as Record<string, string> | undefined),
+      },
     });
   } catch {
     throw new ApiError(
@@ -59,7 +78,13 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const body = isJson ? await res.json().catch(() => null) : null;
 
   if (!res.ok) {
-    throw new ApiError(body?.error || `Error del servidor (${res.status}).`, res.status);
+    // El token venció o se cerró en otro lado: fuera la sesión y al login.
+    if (res.status === 401 && body?.sesionVencida) {
+      await clearSession();
+      avisarSesionVencida();
+    }
+    const { error, ...resto } = body ?? {};
+    throw new ApiError(error || `Error del servidor (${res.status}).`, res.status, resto);
   }
   return body as T;
 }
@@ -158,6 +183,9 @@ export type Account = {
   membershipStatus: MembershipStatus;
   membershipActive: boolean;
   hasGymAccess: boolean;
+  // true mientras use la contraseña que le dieron en recepción: la app le pide
+  // cambiarla antes de seguir.
+  contrasenaTemporal?: boolean;
   // Cobranza: null mientras el gimnasio no le registre ningún pago.
   fechaProximoPago: string | null;
   diaDePago: number | null;
@@ -178,8 +206,11 @@ export type Routine = {
   nivel?: string;
 };
 
+// El login y el registro devuelven la cuenta junto con el token de la sesión.
+export type AccountConToken = Account & { token: string };
+
 export function loginRequest(email: string, password: string) {
-  return request<Account>('/api/users/login', {
+  return request<AccountConToken>('/api/users/login', {
     method: 'POST',
     body: JSON.stringify({ email, password }),
   });
@@ -188,7 +219,7 @@ export function loginRequest(email: string, password: string) {
 // Quien se registra desde la app siempre es "member": crea su cuenta primero y
 // el gimnasio es opcional, se vincula después con un código.
 export function registerRequest(nombre: string, email: string, password: string) {
-  return request<Account>('/api/users/register', {
+  return request<AccountConToken>('/api/users/register', {
     method: 'POST',
     body: JSON.stringify({ nombre, email, password, role: 'member' }),
   });
@@ -198,6 +229,20 @@ export function registerRequest(nombre: string, email: string, password: string)
 // una baja hecha en el panel web se refleja sin cerrar sesión.
 export function fetchAccount(userId: string) {
   return request<Account>(`/api/users/${userId}/me`);
+}
+
+// Cierra la sesión en el servidor: el token deja de servir aunque alguien lo copie.
+export function logoutRequest() {
+  return request<{ message: string }>('/api/users/logout', { method: 'POST' });
+}
+
+// Mi cuenta: cambia la contraseña. Las demás sesiones de la cuenta se cierran;
+// la de este teléfono sigue abierta.
+export function changePassword(userId: string, actual: string, nueva: string) {
+  return request<{ message: string }>('/api/cuenta/contrasena', {
+    method: 'POST',
+    body: JSON.stringify({ userId, actual, nueva }),
+  });
 }
 
 export function lookupGym(codigo: string) {
