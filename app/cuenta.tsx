@@ -52,6 +52,20 @@ export default function CuentaScreen() {
           </Card>
         ) : null}
 
+        {account?.gymId ? (
+          <>
+            <Text style={[styles.seccion, { color: colors.textSecondary }]}>TIENDA</Text>
+            <Card padded={false}>
+              <ListRow
+                icon="receipt-outline"
+                label="Mis pedidos"
+                hint="Comprobantes y el QR para recoger en recepción"
+                onPress={() => router.push('/pedidos')}
+              />
+            </Card>
+          </>
+        ) : null}
+
         <Text style={[styles.seccion, { color: colors.textSecondary }]}>SEGURIDAD</Text>
         <Card padded={false}>
           <ListRow

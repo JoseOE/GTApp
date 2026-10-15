@@ -13,6 +13,7 @@ import { PrimaryButton } from '@/components/ui/PrimaryButton';
 import { AnimatedPressable } from '@/components/ui/AnimatedPressable';
 import { Estrellas } from '@/components/tienda/Estrellas';
 import { AdvertenciaSanitaria } from '@/components/tienda/AdvertenciaSanitaria';
+import { Resenas } from '@/components/tienda/Resenas';
 import { FontFamily, Radius, Spacing } from '@/constants/Theme';
 import { ApiError } from '@/lib/api';
 import { useAccount } from '@/lib/AccountContext';
@@ -21,7 +22,8 @@ import { dinero, urlImagen } from '@/lib/formato';
 import { fetchProducto, type Producto } from '@/lib/tienda';
 
 export default function ProductoScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  // resenar=1: viene de "Califica tu compra" y abre el editor de la reseña.
+  const { id, resenar } = useLocalSearchParams<{ id: string; resenar?: string }>();
   const { colors, brand } = useTheme();
   const { account } = useAccount();
   const { agregar } = useCarrito();
@@ -184,6 +186,16 @@ export default function ProductoScreen() {
         ) : null}
 
         {producto.requiereAdvertencia ? <AdvertenciaSanitaria /> : null}
+
+        {!esPlan && gymId ? (
+          <Resenas
+            gymId={gymId}
+            productoId={producto.id}
+            productoNombre={producto.nombre}
+            abrirEditor={resenar === '1'}
+            onCambio={cargar}
+          />
+        ) : null}
       </ScrollView>
 
       <View style={[styles.pie, { borderTopColor: colors.border, backgroundColor: colors.surface }]}>

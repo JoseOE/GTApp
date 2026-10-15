@@ -119,3 +119,107 @@ export function quitarDelCarrito(partidaId: string) {
 export function vaciarCarrito() {
   return request<Carrito>(`/api/tienda/carrito?${CANAL}`, { method: 'DELETE' });
 }
+
+// ─── Reseñas ───
+// Califica quien compró y pagó el producto: una reseña por persona y producto,
+// editable. Los planes (membresías) no llevan reseñas.
+
+export type Resena = {
+  id: string;
+  autor: string;
+  estrellas: number;
+  comentario: string | null;
+  fecha: string;
+  editada: boolean;
+  propia: boolean;
+  // Solo en la propia: el gimnasio puede ocultarla de la tienda.
+  oculta?: boolean;
+};
+
+export type MiResena = { puede: boolean; resena: Resena | null };
+
+export type ResenasProducto = {
+  calificacion: Calificacion & { porEstrellas: Record<string, number> };
+  resenas: Resena[];
+  hayMas: boolean;
+  mia: MiResena;
+};
+
+// Carrusel "Lo mejor calificado": productos con promedio mayor a 3.8.
+export type Destacado = Producto & {
+  calificacion: Calificacion;
+  resena: { autor: string; estrellas: number; comentario: string } | null;
+};
+
+export const MAX_COMENTARIO = 500;
+
+export function fetchResenas(gymId: string, productoId: string, pagina = 0) {
+  return request<ResenasProducto>(`/api/tienda/${gymId}/productos/${productoId}/resenas?pagina=${pagina}`);
+}
+
+export function guardarResena(gymId: string, productoId: string, estrellas: number, comentario: string) {
+  return request<MiResena>(`/api/tienda/${gymId}/productos/${productoId}/resenas/mia`, {
+    method: 'PUT',
+    body: JSON.stringify({ estrellas, comentario }),
+  });
+}
+
+export function borrarResena(gymId: string, productoId: string) {
+  return request<MiResena>(`/api/tienda/${gymId}/productos/${productoId}/resenas/mia`, { method: 'DELETE' });
+}
+
+export function fetchDestacados(gymId: string) {
+  return request<Destacado[]>(`/api/tienda/${gymId}/resenas/destacadas`);
+}
+
+// ─── Pedidos ───
+
+export type EstadoPedido = 'pendiente_pago' | 'pagado' | 'cancelado' | 'reembolsado';
+
+export type Pedido = {
+  orderId: string;
+  folio: number;
+  estado: EstadoPedido;
+  estadoTexto: string;
+  metodo: string;
+  detallePago: string | null;
+  // "efectivo en tiendas": la ficha para pagar en OXXO y demás.
+  paynet: {
+    referencia: string;
+    vence: string;
+    tienda?: string | null;
+    tiendaNombre?: string | null;
+    folioCaja?: string | null;
+  } | null;
+  proveedorPago: string;
+  canal: string;
+  total: number;
+  subtotal: number;
+  iva: number;
+  creadoEn: string;
+  pagadoEn: string | null;
+  canceladoEn: string | null;
+  // Recoger en recepción: "pendiente" (por recoger), "entregado" o "no_aplica".
+  entrega: { estado: 'pendiente' | 'entregado' | 'no_aplica'; entregadoEn: string | null };
+  partidas: {
+    productoId: string;
+    titulo: string;
+    variante: string | null;
+    tipo: 'producto' | 'membresia';
+    cantidad: number;
+    precioUnitario: number;
+    total: number;
+  }[];
+  gym: { id: string; nombre: string; direccion: string } | null;
+};
+
+export function fetchPedidos() {
+  return request<Pedido[]>('/api/tienda/pedidos');
+}
+
+export function fetchPedido(orderId: string) {
+  return request<Pedido>(`/api/tienda/pedidos/${orderId}`);
+}
+
+// Rutas de las imágenes protegidas: se piden con los encabezados de la sesión.
+export const rutaQrPedido = (orderId: string) => `/api/recibos/pedidos/${orderId}/qr.png`;

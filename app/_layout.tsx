@@ -149,6 +149,8 @@ function RootNavigator() {
           {/* Tienda del gimnasio */}
           <Stack.Screen name="producto/[id]" options={{ title: 'Producto', ...header }} />
           <Stack.Screen name="carrito" options={{ title: 'Tu carrito', ...header }} />
+          <Stack.Screen name="pedidos" options={{ title: 'Mis pedidos', ...header }} />
+          <Stack.Screen name="pedido/[orderId]" options={{ title: 'Pedido', ...header }} />
 
           {/* Mi cuenta: datos, contraseña y cerrar sesión */}
           <Stack.Screen name="cuenta" options={{ title: 'Mi cuenta', ...header }} />
