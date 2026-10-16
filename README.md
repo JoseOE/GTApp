@@ -14,7 +14,9 @@ La plataforma web administrativa y el backend (Spring Boot + MongoDB Atlas) vive
 * Consultar progreso, récords e historial.
 * Notificaciones push.
 * **Tienda del gimnasio**: el miembro compra desde su casa y recoge en recepción (ver abajo).
-* **Mi cuenta**: cambiar la contraseña (obligatorio si es la temporal que dio recepción), PayPal vinculado y cerrar sesión.
+* **Mi cuenta**: PayPal vinculado, cambiar la contraseña y cerrar sesión.
+* **Contraseñas con código**: cambiar la contraseña (desde Mi cuenta o con "¿Olvidaste tu contraseña?" en el login) siempre se confirma con un código de 6 dígitos que llega al correo.
+* **Altas de recepción**: si el gimnasio te dio de alta en su panel, entras con tu correo y tu nombre de usuario como contraseña temporal; la app te pide crear la tuya (con el código) antes de seguir.
 
 ## Ejecución local
 
