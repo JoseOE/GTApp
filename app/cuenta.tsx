@@ -112,7 +112,7 @@ export default function CuentaScreen() {
           <ListRow
             icon="lock-closed-outline"
             label="Cambiar contraseña"
-            hint="Cierra tus otras sesiones abiertas"
+            hint="Con un código que llega a tu correo"
             onPress={() => router.push('/cambiar-contrasena')}
             bordered
           />

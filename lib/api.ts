@@ -243,15 +243,6 @@ export function logoutRequest() {
   return request<{ message: string }>('/api/users/logout', { method: 'POST' });
 }
 
-// Mi cuenta: cambia la contraseña. Las demás sesiones de la cuenta se cierran;
-// la de este teléfono sigue abierta.
-export function changePassword(userId: string, actual: string, nueva: string) {
-  return request<{ message: string }>('/api/cuenta/contrasena', {
-    method: 'POST',
-    body: JSON.stringify({ userId, actual, nueva }),
-  });
-}
-
 // Paso 1 para cambiar la contraseña: el servidor manda al correo un código de
 // 6 dígitos (vigente 30 minutos). Responde lo mismo aunque el correo no
 // exista, para no revelar qué cuentas hay.
