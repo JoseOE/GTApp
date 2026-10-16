@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text } from 'react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useTheme } from '@/hooks/useTheme';
@@ -17,7 +17,9 @@ import { saveSession } from '@/lib/session';
 export default function LoginScreen() {
   const { colors, brand } = useTheme();
   const { establecer } = useAccount();
-  const [email, setEmail] = useState('');
+  // Al volver de "¿Olvidaste tu contraseña?" el correo ya viene escrito.
+  const params = useLocalSearchParams<{ email?: string }>();
+  const [email, setEmail] = useState(params.email ?? '');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);

@@ -252,13 +252,22 @@ export function changePassword(userId: string, actual: string, nueva: string) {
   });
 }
 
-// ¿Olvidaste tu contraseña? El servidor manda al correo un enlace (vigente
-// 30 minutos) a la página para crear una nueva. Responde lo mismo aunque el
-// correo no exista, para no revelar qué cuentas hay.
-export function recuperarContrasena(email: string) {
+// Paso 1 para cambiar la contraseña: el servidor manda al correo un código de
+// 6 dígitos (vigente 30 minutos). Responde lo mismo aunque el correo no
+// exista, para no revelar qué cuentas hay.
+export function pedirCodigoContrasena(email: string) {
   return request<{ message: string }>('/api/cuenta/recuperar', {
     method: 'POST',
     body: JSON.stringify({ email }),
+  });
+}
+
+// Paso 2: el código y la contraseña nueva. Si se manda con la sesión de esa
+// cuenta (la API la agrega sola), esta sesión sigue y las demás se cierran.
+export function cambiarContrasenaConCodigo(email: string, codigo: string, password: string) {
+  return request<{ message: string }>('/api/cuenta/restablecer/codigo', {
+    method: 'POST',
+    body: JSON.stringify({ email, codigo, password }),
   });
 }
 
