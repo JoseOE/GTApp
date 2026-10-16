@@ -185,10 +185,15 @@ export default function CheckoutScreen() {
         // Cambió un precio o se agotó algo: el carrito ya viene corregido.
         reemplazar(e.data.carrito as Carrito);
         setError(e.message);
-      } else if (e.status === 409) {
+      } else if (e.status === 409 && (e.data.terminosCambiaron === true || /términos/i.test(e.message))) {
         // Los términos de compra cambiaron: se muestran otra vez.
         setAvisoTerminos(e.message);
         setPaso('confirmar');
+      } else if (e.status === 409) {
+        // Otro 409 (el pago ya se está procesando, el carrito cambió en otra
+        // sesión, PayPal aprobó otro total): el mensaje y el carrito al día.
+        setError(e.message);
+        await recargar();
       } else {
         // 400 (falta algo) y 402 (pago rechazado): el mensaje tal cual.
         setError(e.message);
