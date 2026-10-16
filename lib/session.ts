@@ -1,6 +1,37 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
+import { Platform } from 'react-native';
 
 const KEY = 'gymtrack.session';
+
+// El token abre la cuenta: en el teléfono se guarda cifrado con SecureStore
+// (Keychain en iOS, Keystore en Android), no en AsyncStorage, que es texto
+// plano. La web no tiene SecureStore y sigue con AsyncStorage.
+const CIFRADA = Platform.OS !== 'web';
+
+async function leerGuardada(): Promise<string | null> {
+  if (!CIFRADA) return AsyncStorage.getItem(KEY);
+  const cifrada = await SecureStore.getItemAsync(KEY).catch(() => null);
+  if (cifrada) return cifrada;
+  // Sesión de una versión anterior de la app: se pasa a SecureStore y se
+  // borra de AsyncStorage (si no se pudo pasar, se queda donde estaba).
+  const anterior = await AsyncStorage.getItem(KEY);
+  if (anterior) {
+    const pasada = await SecureStore.setItemAsync(KEY, anterior).then(() => true, () => false);
+    if (pasada) await AsyncStorage.removeItem(KEY);
+  }
+  return anterior;
+}
+
+async function guardar(valor: string) {
+  if (!CIFRADA) return AsyncStorage.setItem(KEY, valor);
+  await SecureStore.setItemAsync(KEY, valor);
+}
+
+async function borrarGuardada() {
+  await AsyncStorage.removeItem(KEY);
+  if (CIFRADA) await SecureStore.deleteItemAsync(KEY).catch(() => {});
+}
 
 // La sesión solo guarda QUIÉN eres y su token. El estado de la membresía
 // (activa, pendiente, dada de baja) no se cachea a propósito: se pide al
@@ -14,18 +45,18 @@ export type Session = {
   token: string;
 };
 
-// Copia en memoria: cada llamada a la API la necesita y AsyncStorage es lento.
+// Copia en memoria: cada llamada a la API la necesita y leer el almacenamiento es lento.
 let enMemoria: Session | null | undefined;
 
 export async function saveSession(session: Session) {
   enMemoria = session;
   vencidaAvisada = false;
-  await AsyncStorage.setItem(KEY, JSON.stringify(session));
+  await guardar(JSON.stringify(session));
 }
 
 export async function getSession(): Promise<Session | null> {
   if (enMemoria !== undefined) return enMemoria;
-  const raw = await AsyncStorage.getItem(KEY);
+  const raw = await leerGuardada();
   enMemoria = leer(raw);
   return enMemoria;
 }
@@ -45,7 +76,7 @@ function leer(raw: string | null): Session | null {
 
 export async function clearSession() {
   enMemoria = null;
-  await AsyncStorage.removeItem(KEY);
+  await borrarGuardada();
 }
 
 // ─── Sesión vencida ───
