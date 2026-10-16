@@ -100,6 +100,15 @@ export default function LoginScreen() {
               onRightIconPress={() => setShowPassword((v) => !v)}
             />
 
+            <AnimatedPressable
+              onPress={() => router.push({ pathname: '/(auth)/recuperar', params: { email: email.trim() } })}
+              haptic={false}
+              scaleTo={0.97}
+              hitSlop={8}
+              style={styles.olvide}>
+              <Text style={[styles.olvideTexto, { color: brand.primary }]}>¿Olvidaste tu contraseña?</Text>
+            </AnimatedPressable>
+
             {error ? <ErrorBox message={error} /> : null}
 
             <PrimaryButton label="Entrar" icon="log-in-outline" onPress={handleLogin} loading={loading} />
@@ -134,5 +143,7 @@ const styles = StyleSheet.create({
   subtitle: { fontSize: 14.5, textAlign: 'center', maxWidth: 260 },
   form: { gap: Spacing.lg },
   linkRow: { paddingVertical: Spacing.sm },
+  olvide: { alignSelf: 'flex-end', marginTop: -Spacing.sm },
+  olvideTexto: { fontFamily: FontFamily.semiBold, fontSize: 13 },
   helper: { fontSize: 13.5, textAlign: 'center', lineHeight: 19 },
 });

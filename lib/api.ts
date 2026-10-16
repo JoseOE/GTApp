@@ -252,6 +252,16 @@ export function changePassword(userId: string, actual: string, nueva: string) {
   });
 }
 
+// ¿Olvidaste tu contraseña? El servidor manda al correo un enlace (vigente
+// 30 minutos) a la página para crear una nueva. Responde lo mismo aunque el
+// correo no exista, para no revelar qué cuentas hay.
+export function recuperarContrasena(email: string) {
+  return request<{ message: string }>('/api/cuenta/recuperar', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  });
+}
+
 export function lookupGym(codigo: string) {
   return request<{ id: string; nombre: string; direccion: string }>(
     `/api/gyms/lookup?codigo=${encodeURIComponent(codigo)}`
