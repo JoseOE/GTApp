@@ -2,7 +2,8 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState, ty
 import { Alert, AppState } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 
-import { ApiError, fetchAccount, logoutRequest, type Account } from './api';
+import { ApiError, fetchAccount, logoutRequest, registerPushToken, type Account } from './api';
+import { cancelarRecordatorios } from './notifications';
 import { clearSession, getSession, onSesionVencida } from './session';
 
 type AccountState = {
@@ -90,6 +91,11 @@ export function AccountProvider({ children }: { children: ReactNode }) {
   }, [reload]);
 
   const signOut = useCallback(async () => {
+    // Este teléfono deja de recibir los avisos de la cuenta (push y el
+    // recordatorio de pago): si otra persona entra aquí, no le llegan.
+    const session = await getSession();
+    if (session) await registerPushToken(session.userId, '').catch(() => {});
+    await cancelarRecordatorios();
     // Se cierra también en el servidor; si no hay red, la sesión local se va igual.
     await logoutRequest().catch(() => {});
     await clearSession();
@@ -102,6 +108,7 @@ export function AccountProvider({ children }: { children: ReactNode }) {
   useEffect(
     () =>
       onSesionVencida(() => {
+        cancelarRecordatorios();
         setAccount(null);
         setError(null);
         router.replace('/(auth)/login');
