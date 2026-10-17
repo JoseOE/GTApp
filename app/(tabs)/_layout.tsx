@@ -8,6 +8,7 @@ import { FontFamily, Spacing } from '@/constants/Theme';
 import { AnimatedTabIcon } from '@/components/ui/AnimatedTabIcon';
 import { AnimatedPressable } from '@/components/ui/AnimatedPressable';
 import { useAccount } from '@/lib/AccountContext';
+import { temporalPospuesta } from '@/lib/contrasena';
 import { getSession } from '@/lib/session';
 
 export default function TabLayout() {
@@ -25,8 +26,9 @@ export default function TabLayout() {
     });
   }, []);
 
-  // Quien entró con la contraseña que le dio recepción tiene que cambiarla antes de seguir.
-  const temporal = ready && account?.contrasenaTemporal === true;
+  // Quien entró con la contraseña que le dio recepción tiene que cambiarla
+  // antes de seguir, salvo que haya elegido "Más tarde" en esta sesión de la app.
+  const temporal = ready && account?.contrasenaTemporal === true && !temporalPospuesta(account?.id);
   useEffect(() => {
     if (temporal) router.push('/cambiar-contrasena');
   }, [temporal]);
