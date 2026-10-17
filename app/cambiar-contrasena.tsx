@@ -7,12 +7,15 @@ import { useTheme } from '@/hooks/useTheme';
 import { Card } from '@/components/ui/Card';
 import { IconCircle } from '@/components/ui/IconCircle';
 import { CambioConCodigo } from '@/components/cuenta/CambioConCodigo';
+import { PrimaryButton } from '@/components/ui/PrimaryButton';
 import { FontFamily, Spacing } from '@/constants/Theme';
 import { useAccount } from '@/lib/AccountContext';
+import { posponerTemporal } from '@/lib/contrasena';
 
 // Cambiar la contraseña con un código que llega al correo de la cuenta. Si la
-// cuenta trae la contraseña temporal de recepción (su nombre de usuario), esta
-// pantalla no se puede saltar: sin cambiarla no se sigue.
+// cuenta trae la contraseña temporal de recepción (su nombre de usuario), no se
+// cierra con "atrás": o se cambia, o se elige "Más tarde" (vuelve a pedirse la
+// próxima vez que se abra la app).
 export default function CambiarContrasenaScreen() {
   const { colors } = useTheme();
   const { account, reload } = useAccount();
@@ -27,6 +30,13 @@ export default function CambiarContrasenaScreen() {
   }, [temporal]);
 
   if (!account) return <View style={{ flex: 1, backgroundColor: colors.background }} />;
+
+  function masTarde() {
+    if (!account) return;
+    posponerTemporal(account.id);
+    if (router.canGoBack()) router.back();
+    else router.replace('/(tabs)');
+  }
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['bottom']}>
@@ -58,6 +68,15 @@ export default function CambiarContrasenaScreen() {
               }}
             />
           </Card>
+
+          {temporal ? (
+            <View style={{ gap: Spacing.sm }}>
+              <PrimaryButton label="Más tarde" icon="time-outline" variant="outline" onPress={masTarde} />
+              <Text style={[styles.nota, { color: colors.textSecondary }]}>
+                Te lo pediremos otra vez la próxima vez que abras la app. También puedes cambiarla desde Mi cuenta.
+              </Text>
+            </View>
+          ) : null}
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -70,4 +89,5 @@ const styles = StyleSheet.create({
   header: { alignItems: 'center', gap: Spacing.sm },
   title: { fontFamily: FontFamily.bold, fontSize: 20, textAlign: 'center', marginTop: Spacing.sm },
   subtitle: { fontSize: 13.5, textAlign: 'center', lineHeight: 19, maxWidth: 320 },
+  nota: { fontSize: 12.5, textAlign: 'center', lineHeight: 17 },
 });
