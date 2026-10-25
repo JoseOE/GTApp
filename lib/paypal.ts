@@ -10,17 +10,17 @@ export const cancelPaypal = () => Linking.createURL('pago-paypal-cancelado');
 
 export type ResultadoPaypal = { aprobado: true; token: string; payerId: string } | { aprobado: false };
 
-// Crea la orden, abre la página del simulador para aprobarla (con una cuenta
-// de prueba, sin contraseña) y espera a que el navegador vuelva a la app.
-export async function aprobarEnPaypal(recordar: boolean): Promise<ResultadoPaypal> {
+// Crea la orden en PayPal, abre su página para aprobarla (en el sandbox, con
+// una cuenta compradora de prueba) y espera a que el navegador vuelva a la app.
+export async function aprobarEnPaypal(): Promise<ResultadoPaypal> {
   const regreso = regresoPaypal();
-  const orden = await crearOrdenPaypal(regreso, cancelPaypal(), recordar);
+  const orden = await crearOrdenPaypal(regreso, cancelPaypal());
   // El de cancelado empieza igual que el de regreso, así que los dos cierran la sesión.
   const resultado = await WebBrowser.openAuthSessionAsync(orden.aprobarUrl, regreso);
   if (resultado.type !== 'success' || resultado.url.includes('pago-paypal-cancelado')) return { aprobado: false };
   const token = parametro(resultado.url, 'token');
-  const payerId = parametro(resultado.url, 'PayerID');
-  if (!token || !payerId) return { aprobado: false };
+  const payerId = parametro(resultado.url, 'PayerID') ?? '';
+  if (!token) return { aprobado: false };
   return { aprobado: true, token, payerId };
 }
 

@@ -151,9 +151,11 @@ function RootNavigator() {
           <Stack.Screen name="carrito" options={{ title: 'Tu carrito', ...header }} />
           <Stack.Screen name="checkout" options={{ title: 'Pagar', ...header }} />
           <Stack.Screen name="pedidos" options={{ title: 'Mis pedidos', ...header }} />
-          {/* A donde vuelve el navegador después de PayPal: se cierran solas. */}
+          {/* A donde vuelve el navegador después de PayPal y de Stripe: se cierran solas. */}
           <Stack.Screen name="pago-paypal" options={{ headerShown: false, animation: 'none' }} />
           <Stack.Screen name="pago-paypal-cancelado" options={{ headerShown: false, animation: 'none' }} />
+          <Stack.Screen name="pago-stripe" options={{ headerShown: false, animation: 'none' }} />
+          <Stack.Screen name="pago-stripe-cancelado" options={{ headerShown: false, animation: 'none' }} />
           <Stack.Screen name="pedido/[orderId]" options={{ title: 'Pedido', ...header }} />
 
           {/* Mi cuenta: datos, contraseña y cerrar sesión */}
