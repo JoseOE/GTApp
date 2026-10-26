@@ -13,12 +13,13 @@ import { PrimaryButton } from '@/components/ui/PrimaryButton';
 import { AnimatedPressable } from '@/components/ui/AnimatedPressable';
 import { Avisos, Desglose } from '@/components/tienda/Desglose';
 import { FilaLogos, type Logo } from '@/components/checkout/LogoPago';
-import { descripcionTarjeta, MetodoTarjeta } from '@/components/checkout/MetodoTarjeta';
+import { MetodoTarjeta } from '@/components/checkout/MetodoTarjeta';
 import { ModalAdvertencia } from '@/components/checkout/ModalAdvertencia';
 import { ModalConfirmar } from '@/components/checkout/ModalConfirmar';
 import { TIENDAS_EFECTIVO } from '@/components/tienda/FichaPaynet';
 import { MetodoPaypal } from '@/components/checkout/MetodoPaypal';
 import { aprobarEnPaypal } from '@/lib/paypal';
+import { pagarEnStripe } from '@/lib/stripe';
 import { FontFamily, Radius, Spacing } from '@/constants/Theme';
 import { ApiError } from '@/lib/api';
 import { useAccount } from '@/lib/AccountContext';
@@ -26,7 +27,6 @@ import { useCarrito } from '@/lib/CarritoContext';
 import { dinero } from '@/lib/formato';
 import {
   fetchVendedor,
-  fetchVinculoPaypal,
   pagarCarrito,
   TERMINOS_VERSION,
   urlPrivacidad,
@@ -34,32 +34,30 @@ import {
   type Carrito,
   type Consentimiento,
   type MetodoPago,
-  type TarjetaTokenizada,
   type Vendedor,
-  type VinculoPaypal,
 } from '@/lib/tienda';
 
 type Metodo = { id: MetodoPago; titulo: string; descripcion: string; logos: Logo[] };
 
-// Formas de pago de la app (todas simuladas). El efectivo en mano es solo en
-// el mostrador del gimnasio.
+// Formas de pago de la app, con las APIs reales en su modo de prueba. El
+// efectivo en mano es solo en el mostrador del gimnasio.
 const METODOS: Metodo[] = [
   {
     id: 'stripe',
     titulo: 'Tarjeta de crédito o débito',
-    descripcion: 'Meses sin intereses con tarjeta de crédito.',
+    descripcion: 'Visa, Mastercard o American Express en la página segura de Stripe.',
     logos: ['visa', 'mastercard', 'amex'],
   },
   {
     id: 'paypal',
     titulo: 'PayPal',
-    descripcion: 'Apruebas el pago en PayPal, o con solo confirmar si vinculaste tu cuenta.',
+    descripcion: 'Apruebas el pago en la página de PayPal y regresas a la app.',
     logos: ['paypal'],
   },
   {
     id: 'paynet',
     titulo: 'Efectivo en tiendas',
-    descripcion: 'Te damos una ficha con código de barras; tienes 72 horas para pagarla.',
+    descripcion: 'Te damos una ficha de Paynet con código de barras; tienes 72 horas para pagarla.',
     logos: TIENDAS_EFECTIVO,
   },
 ];
@@ -75,11 +73,6 @@ export default function CheckoutScreen() {
 
   const [vendedor, setVendedor] = useState<Vendedor | null>(null);
   const [metodo, setMetodo] = useState<MetodoPago>('stripe');
-  const [tarjeta, setTarjeta] = useState<TarjetaTokenizada | null>(null);
-  const [meses, setMeses] = useState(1);
-  const [vinculo, setVinculo] = useState<VinculoPaypal | null>(null);
-  const [usarVinculo, setUsarVinculo] = useState(true);
-  const [recordar, setRecordar] = useState(false);
   const [paso, setPaso] = useState<Paso>(null);
   const [aceptoAdvertencia, setAceptoAdvertencia] = useState(false);
   const [avisoTerminos, setAvisoTerminos] = useState<string | null>(null);
@@ -94,7 +87,6 @@ export default function CheckoutScreen() {
 
   useEffect(() => {
     if (gymId) fetchVendedor(gymId).then(setVendedor).catch(() => {});
-    fetchVinculoPaypal().then(setVinculo).catch(() => {});
   }, [gymId]);
 
   if (!carrito || carrito.items.length === 0) {
@@ -118,30 +110,29 @@ export default function CheckoutScreen() {
   // Productos que piden aceptar la advertencia sanitaria (sin repetir).
   const conAdvertencia = [...new Set(carrito.items.filter((i) => i.requiereAdvertencia).map((i) => i.titulo))];
   const razon = vendedor?.razonSocial || vendedor?.nombre || gymNombre;
-  const conVinculo = metodo === 'paypal' && !!vinculo?.vinculada && usarVinculo;
-
-  // Qué le falta al método elegido para poder cobrar.
-  function faltaParaPagar(): string | null {
-    if (metodo === 'stripe' && !tarjeta) return 'Captura tu tarjeta y toca "Usar esta tarjeta".';
-    return null;
-  }
-
   function formaDePago(): string {
-    if (metodo === 'stripe' && tarjeta) return descripcionTarjeta(tarjeta, meses, total);
-    if (metodo === 'paypal') return conVinculo ? `PayPal · cuenta vinculada ${vinculo?.cuenta}` : 'PayPal (lo apruebas en la página de PayPal)';
+    if (metodo === 'stripe') return 'Tarjeta (la pagas en la página de Stripe)';
+    if (metodo === 'paypal') return 'PayPal (lo apruebas en la página de PayPal)';
     return METODOS.find((m) => m.id === metodo)?.titulo ?? '';
   }
 
   // Lo que el método manda al servidor. null = la persona canceló a medio camino.
+  // La confirmación y el consentimiento ya se dieron antes de salir a Stripe o
+  // a PayPal. Se espera a que cierre la hoja de confirmación: iOS no abre el
+  // navegador mientras otra vista se está cerrando.
   async function datosDelMetodo(): Promise<Record<string, unknown> | null> {
-    if (metodo === 'stripe' && tarjeta) return meses > 1 ? { token: tarjeta.token, meses } : { token: tarjeta.token };
-    if (metodo === 'paypal') {
-      if (conVinculo) return { vinculo: true };
-      // La confirmación y el consentimiento ya se dieron: se reúsan al volver.
-      // Se espera a que cierre la hoja de confirmación: iOS no abre el
-      // navegador mientras otra vista se está cerrando.
+    if (metodo === 'stripe') {
       await new Promise((listo) => setTimeout(listo, 400));
-      const r = await aprobarEnPaypal(recordar);
+      const r = await pagarEnStripe();
+      if (!r.pagado) {
+        setError('Cancelaste el pago con tarjeta. No se hizo ningún cargo.');
+        return null;
+      }
+      return { sesion: r.sesion };
+    }
+    if (metodo === 'paypal') {
+      await new Promise((listo) => setTimeout(listo, 400));
+      const r = await aprobarEnPaypal();
       if (!r.aprobado) {
         setError('Cancelaste el pago en PayPal. No se hizo ningún cargo.');
         return null;
@@ -152,11 +143,6 @@ export default function CheckoutScreen() {
   }
 
   function iniciarPago() {
-    const falta = faltaParaPagar();
-    if (falta) {
-      setError(falta);
-      return;
-    }
     setError(null);
     setAvisoTerminos(null);
     setAceptoAdvertencia(false);
@@ -196,15 +182,8 @@ export default function CheckoutScreen() {
         await recargar();
       } else {
         // 400 (falta algo) y 402 (pago rechazado): el mensaje tal cual.
+        // No se cobró nada: "Pagar" vuelve a abrir Stripe o PayPal.
         setError(e.message);
-        // El token de la tarjeta se gasta al intentar cobrar: hay que capturarla otra vez.
-        if (metodo === 'stripe' && (e.status === 402 || /tarjeta/i.test(e.message))) setTarjeta(null);
-        // La cuenta PayPal se desvinculó en otro lado: vuelve el flujo normal.
-        if (conVinculo && /vinculad/i.test(e.message)) {
-          setVinculo({ vinculada: false });
-          setUsarVinculo(false);
-        }
-        if (metodo === 'paypal' && recordar) fetchVinculoPaypal().then(setVinculo).catch(() => {});
       }
     } finally {
       setProcesando(false);
@@ -266,19 +245,13 @@ export default function CheckoutScreen() {
 
           {metodo === 'stripe' ? (
             <Card>
-              <MetodoTarjeta total={total} tarjeta={tarjeta} onTarjeta={setTarjeta} meses={meses} onMeses={setMeses} />
+              <MetodoTarjeta />
             </Card>
           ) : null}
 
           {metodo === 'paypal' ? (
             <Card>
-              <MetodoPaypal
-                vinculo={vinculo}
-                usarVinculo={usarVinculo}
-                onUsarVinculo={setUsarVinculo}
-                recordar={recordar}
-                onRecordar={setRecordar}
-              />
+              <MetodoPaypal />
             </Card>
           ) : null}
 
@@ -294,7 +267,7 @@ export default function CheckoutScreen() {
             <Text style={[styles.enlace, { color: brand.primaryDark }]} onPress={() => WebBrowser.openBrowserAsync(urlPrivacidad(gymId))}>
               Aviso de privacidad
             </Text>{' '}
-            de {razon.replace(/\.$/, '')}. Pagos simulados: no se cobra dinero real.
+            de {razon.replace(/\.$/, '')}. Pagos en modo de prueba (sandbox): no se cobra dinero real.
           </Text>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -317,7 +290,7 @@ export default function CheckoutScreen() {
         totales={carrito}
         formaDePago={formaDePago()}
         aviso={avisoTerminos}
-        confirmarTexto={metodo === 'paypal' && !conVinculo ? 'Confirmar e ir a PayPal' : undefined}
+        confirmarTexto={metodo === 'paypal' ? 'Confirmar e ir a PayPal' : metodo === 'stripe' ? 'Confirmar e ir a Stripe' : undefined}
         onCancelar={() => setPaso(null)}
         onConfirmar={pagar}
       />

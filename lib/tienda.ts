@@ -190,6 +190,9 @@ export type Pedido = {
     tienda?: string | null;
     tiendaNombre?: string | null;
     folioCaja?: string | null;
+    // La ficha oficial de Paynet en PDF (la genera Openpay).
+    fichaUrl?: string | null;
+    prueba?: boolean;
   } | null;
   proveedorPago: string;
   canal: string;
@@ -261,7 +264,7 @@ export type MetodoPago = 'stripe' | 'paynet' | 'paypal';
 
 //  - 200 → el pedido;
 //  - 400 → falta aceptar algo (el mensaje se muestra tal cual);
-//  - 402 → el simulador rechazó el pago;
+//  - 402 → Stripe o PayPal rechazaron el pago;
 //  - 409 → el carrito cambió ("avisos" y "carrito" corregido) o los términos cambiaron.
 export function pagarCarrito(metodo: MetodoPago, datos: Record<string, unknown>, totalVisto: number, consentimiento: Consentimiento) {
   return request<Pedido>(`/api/tienda/carrito/checkout?${CANAL}`, {
@@ -270,54 +273,29 @@ export function pagarCarrito(metodo: MetodoPago, datos: Record<string, unknown>,
   });
 }
 
-// ─── Tarjeta (simulador de Stripe) ───
+// ─── Tarjeta: Stripe Checkout (modo de prueba) ───
 
-export type TarjetaTokenizada = {
-  token: string;
-  marca: 'visa' | 'mastercard' | 'amex' | string;
-  ultimos4: string;
-  vencimiento: string;
-  tipo: 'credito' | 'debito';
-};
+// La página de pago de Stripe por el total del carrito. La tarjeta se captura
+// ahí (nunca pasa por la app ni por GymTrack) y Stripe regresa a returnUrl con
+// ?session_id=...; con esa sesión se cobra el carrito.
+export type SesionStripe = { id: string; url: string; monto: number };
 
-// El número y el CVC solo viajan aquí, una vez: después la app usa el token.
-export function tokenizarTarjeta(tarjeta: { numero: string; titular: string; mes: string; anio: string; cvc: string }) {
-  return request<TarjetaTokenizada>('/api/simuladores/stripe/tokens', {
+export function crearSesionStripe(returnUrl: string, cancelUrl: string) {
+  return request<SesionStripe>(`/api/pagos/stripe/sesiones?${CANAL}`, {
     method: 'POST',
-    body: JSON.stringify(tarjeta),
+    body: JSON.stringify({ returnUrl, cancelUrl }),
   });
 }
 
-// Meses sin intereses (solo crédito) y la compra mínima de cada plazo: la
-// misma tabla que SimuladorStripeService.MESES_SIN_INTERESES.
-export const MESES_SIN_INTERESES: [number, number][] = [
-  [3, 300],
-  [6, 600],
-  [9, 900],
-  [12, 1200],
-];
-
-// ─── PayPal (simulador) ───
+// ─── PayPal (sandbox) ───
 
 export type OrdenPaypal = { id: string; monto: number; moneda: string; aprobarUrl: string };
 
 // returnUrl/cancelUrl: los enlaces de la app a los que vuelve el navegador
-// después de aprobar o cancelar. recordar: al pagar, la cuenta queda vinculada.
-export function crearOrdenPaypal(returnUrl: string, cancelUrl: string, recordar: boolean) {
-  return request<OrdenPaypal>(`/api/simuladores/paypal/ordenes?${CANAL}`, {
+// después de aprobar o cancelar en PayPal.
+export function crearOrdenPaypal(returnUrl: string, cancelUrl: string) {
+  return request<OrdenPaypal>(`/api/pagos/paypal/ordenes?${CANAL}`, {
     method: 'POST',
-    body: JSON.stringify({ returnUrl, cancelUrl, recordar }),
+    body: JSON.stringify({ returnUrl, cancelUrl }),
   });
-}
-
-// La cuenta PayPal vinculada: con ella se paga con solo confirmar. No se
-// guarda contraseña ni tarjeta.
-export type VinculoPaypal = { vinculada: boolean; cuenta?: string; nombre?: string; desde?: string };
-
-export function fetchVinculoPaypal() {
-  return request<VinculoPaypal>('/api/simuladores/paypal/vinculo');
-}
-
-export function desvincularPaypal() {
-  return request<VinculoPaypal>('/api/simuladores/paypal/vinculo', { method: 'DELETE' });
 }
