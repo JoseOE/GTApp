@@ -91,6 +91,14 @@ export function fetchCategorias() {
   return request<Categoria[]>('/api/tienda/categorias');
 }
 
+// Cómo cobra el servidor. simularPaypal: se puede pedir que PayPal rechace el
+// cobro (solo en pruebas, nunca con PayPal en producción).
+export type SimulacionPaypal = 'aprobado' | 'sin_fondos' | 'cuenta_invalida';
+
+export function fetchModoPagos() {
+  return request<{ modo: 'sandbox' | 'simulado'; simularPaypal?: boolean }>('/api/pagos/modo');
+}
+
 // ─── Carrito ───
 
 export function fetchCarrito() {

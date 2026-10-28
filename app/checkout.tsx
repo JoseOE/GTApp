@@ -34,6 +34,7 @@ import {
   type Carrito,
   type Consentimiento,
   type MetodoPago,
+  type SimulacionPaypal,
   type Vendedor,
 } from '@/lib/tienda';
 
@@ -73,6 +74,8 @@ export default function CheckoutScreen() {
 
   const [vendedor, setVendedor] = useState<Vendedor | null>(null);
   const [metodo, setMetodo] = useState<MetodoPago>('stripe');
+  // Solo en pruebas: cómo responde PayPal al cobrar (ver MetodoPaypal).
+  const [simularPaypal, setSimularPaypal] = useState<SimulacionPaypal>('aprobado');
   const [paso, setPaso] = useState<Paso>(null);
   const [aceptoAdvertencia, setAceptoAdvertencia] = useState(false);
   const [avisoTerminos, setAvisoTerminos] = useState<string | null>(null);
@@ -137,7 +140,7 @@ export default function CheckoutScreen() {
         setError('Cancelaste el pago en PayPal. No se hizo ningún cargo.');
         return null;
       }
-      return { token: r.token, payerId: r.payerId };
+      return { token: r.token, payerId: r.payerId, ...(simularPaypal !== 'aprobado' ? { simular: simularPaypal } : {}) };
     }
     return {};
   }
@@ -251,7 +254,7 @@ export default function CheckoutScreen() {
 
           {metodo === 'paypal' ? (
             <Card>
-              <MetodoPaypal />
+              <MetodoPaypal simular={simularPaypal} onSimular={setSimularPaypal} />
             </Card>
           ) : null}
 
