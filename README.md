@@ -42,6 +42,28 @@ EXPO_PUBLIC_API_URL=local npx expo start
 
 También puedes asignar a `EXPO_PUBLIC_API_URL` una URL completa.
 
+## Generar el APK (Android)
+
+El APK se compila en la nube con **EAS Build**, sin Android Studio. El perfil `preview` de [eas.json](eas.json) genera un `.apk` instalable conectado a `https://gtweb.onrender.com`. El paquete Android es `com.gymtrack.app`.
+
+```bash
+npm install
+```
+
+```bash
+npx eas-cli@latest login
+```
+
+```bash
+npx eas-cli@latest build -p android --profile preview
+```
+
+La primera vez, EAS pregunta si crea el proyecto y si genera el keystore de Android: a las dos, **Yes**. Al terminar (de 10 a 20 minutos en la cola gratuita) muestra un enlace y un QR para descargar el `.apk`.
+
+Para instalarlo, abre el enlace en el teléfono Android y permite "Instalar apps de origen desconocido". En iPhone se sigue usando Expo Go.
+
+El perfil `production` genera el `.aab` para Google Play.
+
 ## Sesión
 
 El login y el registro devuelven un `token`. La app lo guarda y lo manda en cada llamada como `Authorization: Bearer <token>` (junto con `X-User-Id` mientras dure la transición). Si el servidor responde `{sesionVencida: true}`, la app borra la sesión y vuelve al login. Con esto ya se puede activar `EXIGIR_TOKEN=true` en Render.
