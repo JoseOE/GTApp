@@ -168,6 +168,13 @@ export function borrarResena(gymId: string, productoId: string) {
   return request<MiResena>(`/api/tienda/${gymId}/productos/${productoId}/resenas/mia`, { method: 'DELETE' });
 }
 
+// Lo más vendido del gimnasio (piezas pagadas, sin planes), para el carrusel de la tienda.
+export type MasVendido = Producto & { vendidos: number };
+
+export function fetchMasVendidos(gymId: string, limite = 8) {
+  return request<MasVendido[]>(`/api/tienda/${gymId}/productos/mas-vendidos?limite=${limite}`);
+}
+
 export function fetchDestacados(gymId: string) {
   return request<Destacado[]>(`/api/tienda/${gymId}/resenas/destacadas`);
 }
