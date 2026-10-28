@@ -10,6 +10,7 @@ import { ListRow } from '@/components/ui/ListRow';
 import { FontFamily, Spacing } from '@/constants/Theme';
 import { useAccount, useAccountRefreshOnFocus } from '@/lib/AccountContext';
 import { cancelarRecordatorios } from '@/lib/notifications';
+import { puedeComprar } from '@/lib/CarritoContext';
 
 // Mi cuenta: quién eres, tu gimnasio y lo que se hace con la cuenta
 // (pedidos, contraseña, cerrar sesión).
@@ -60,6 +61,20 @@ export default function CuentaScreen() {
                 label="Mis pedidos"
                 hint="Comprobantes y el QR para recoger en recepción"
                 onPress={() => router.push('/pedidos')}
+              />
+            </Card>
+          </>
+        ) : null}
+
+        {account?.gymId && puedeComprar(account) ? (
+          <>
+            <Text style={[styles.seccion, { color: colors.textSecondary }]}>GYMTRACK</Text>
+            <Card padded={false}>
+              <ListRow
+                icon="star-outline"
+                label="Tu opinión sobre GymTrack"
+                hint="Con 4 estrellas o más sale en la página de inicio"
+                onPress={() => router.push('/opinion')}
               />
             </Card>
           </>

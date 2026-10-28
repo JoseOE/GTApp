@@ -161,6 +161,7 @@ function RootNavigator() {
           {/* Mi cuenta: datos, contraseña y cerrar sesión */}
           <Stack.Screen name="cuenta" options={{ title: 'Mi cuenta', ...header }} />
           <Stack.Screen name="cambiar-contrasena" options={{ title: 'Contraseña', ...header }} />
+          <Stack.Screen name="opinion" options={{ title: 'Tu opinión', ...header }} />
 
           {/* Página de error no encontrada */}
           <Stack.Screen name="+not-found" options={{ title: 'No encontrado' }} />

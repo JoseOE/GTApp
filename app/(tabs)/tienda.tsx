@@ -21,6 +21,7 @@ import { StateCard } from '@/components/ui/StateCard';
 import { AnimatedPressable } from '@/components/ui/AnimatedPressable';
 import { Estrellas } from '@/components/tienda/Estrellas';
 import { CarruselDestacados } from '@/components/tienda/CarruselDestacados';
+import { CarruselMasVendidos } from '@/components/tienda/CarruselMasVendidos';
 import { FontFamily, Radius, Shadow, Spacing } from '@/constants/Theme';
 import { ApiError } from '@/lib/api';
 import { useAccount, useAccountRefreshOnFocus } from '@/lib/AccountContext';
@@ -123,6 +124,7 @@ export default function TiendaScreen() {
       ) : null}
 
       {/* Arriba de todo, mientras no se esté buscando ni filtrando. */}
+      {!busqueda && !categoria ? <CarruselMasVendidos gymId={gymId} /> : null}
       {!busqueda && !categoria ? <CarruselDestacados gymId={gymId} /> : null}
 
       <View style={[styles.buscador, { backgroundColor: colors.surface, borderColor: colors.border }]}>
