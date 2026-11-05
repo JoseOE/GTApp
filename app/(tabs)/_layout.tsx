@@ -1,12 +1,10 @@
 import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { Tabs, router } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 
 import { useTheme } from '@/hooks/useTheme';
-import { FontFamily, Spacing } from '@/constants/Theme';
+import { FontFamily } from '@/constants/Theme';
 import { AnimatedTabIcon } from '@/components/ui/AnimatedTabIcon';
-import { AnimatedPressable } from '@/components/ui/AnimatedPressable';
 import { useAccount } from '@/lib/AccountContext';
 import { temporalPospuesta } from '@/lib/contrasena';
 import { getSession } from '@/lib/session';
@@ -45,19 +43,9 @@ export default function TabLayout() {
           borderTopColor: colors.tabBarBorder,
         },
         tabBarLabelStyle: { fontFamily: FontFamily.medium, fontSize: 11.5 },
-        headerShown: true,
-        headerStyle: { backgroundColor: colors.headerBackground },
-        headerTitleStyle: { fontFamily: FontFamily.semiBold, fontSize: 17, color: colors.headerText },
-        headerTintColor: colors.headerText,
-        headerRight: () => (
-          <AnimatedPressable
-            onPress={() => router.push('/cuenta')}
-            hitSlop={10}
-            accessibilityLabel="Mi cuenta"
-            style={{ paddingHorizontal: Spacing.lg }}>
-            <Ionicons name="person-circle-outline" size={24} color={colors.headerText} />
-          </AnimatedPressable>
-        ),
+        // Como en iOS: sin barra arriba. Cada pestaña lleva su título grande
+        // (TituloGrande) con el acceso a Mi cuenta, e Inicio su portada.
+        headerShown: false,
       }}>
       <Tabs.Screen
         name="index"

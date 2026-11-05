@@ -1,28 +1,42 @@
-import { StyleSheet, Text } from 'react-native';
-import type { Ionicons } from '@expo/vector-icons';
+import { StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 import { useTheme } from '@/hooks/useTheme';
 import { Card } from './Card';
-import { IconCircle } from './IconCircle';
 import type { BadgeTone } from './Badge';
-import { FontFamily, Spacing } from '@/constants/Theme';
+import { Spacing, Type } from '@/constants/Theme';
 
 type StatTileProps = {
   icon: keyof typeof Ionicons.glyphMap;
   value: string;
   label: string;
   tone: BadgeTone;
+  // Unidad pequeña junto al número ("kg", "días").
+  unidad?: string;
 };
 
-export function StatTile({ icon, value, label, tone }: StatTileProps) {
-  const { colors } = useTheme();
+// Cifra deportiva: el número manda (grande y grueso) y la etiqueta lo explica.
+// El ícono es pequeño y solo él lleva el color del tono.
+export function StatTile({ icon, value, label, tone, unidad }: StatTileProps) {
+  const { colors, brand } = useTheme();
+  const color: Record<BadgeTone, string> = {
+    brand: brand.primary,
+    success: brand.success,
+    warning: brand.warning,
+    info: brand.info,
+    danger: brand.danger,
+    muted: colors.textSecondary,
+  };
   return (
-    <Card style={styles.tile}>
-      <IconCircle name={icon} tone={tone} size={34} />
-      <Text style={[styles.value, { color: colors.text }]} numberOfLines={1} adjustsFontSizeToFit>
-        {value}
-      </Text>
-      <Text style={[styles.label, { color: colors.textSecondary }]} numberOfLines={2}>
+    <Card style={styles.tile} elevated={false}>
+      <Ionicons name={icon} size={18} color={color[tone]} />
+      <View style={styles.cifra}>
+        <Text style={[Type.stat, { color: colors.text }]} numberOfLines={1} adjustsFontSizeToFit>
+          {value}
+        </Text>
+        {unidad ? <Text style={[Type.caption, { color: colors.textSecondary }]}>{unidad}</Text> : null}
+      </View>
+      <Text style={[Type.caption, { color: colors.textSecondary }]} numberOfLines={2}>
         {label}
       </Text>
     </Card>
@@ -30,7 +44,6 @@ export function StatTile({ icon, value, label, tone }: StatTileProps) {
 }
 
 const styles = StyleSheet.create({
-  tile: { flex: 1, alignItems: 'flex-start', gap: 6, padding: Spacing.md },
-  value: { fontFamily: FontFamily.bold, fontSize: 16.5, marginTop: 2, width: '100%' },
-  label: { fontSize: 10.5, lineHeight: 13 },
+  tile: { flex: 1, alignItems: 'flex-start', gap: 2, padding: Spacing.md },
+  cifra: { flexDirection: 'row', alignItems: 'baseline', gap: 3, marginTop: Spacing.xs },
 });

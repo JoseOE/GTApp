@@ -19,6 +19,7 @@ import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { StateCard } from '@/components/ui/StateCard';
 import { AnimatedPressable } from '@/components/ui/AnimatedPressable';
+import { TituloGrande } from '@/components/ui/TituloGrande';
 import { Estrellas } from '@/components/tienda/Estrellas';
 import { CarruselDestacados } from '@/components/tienda/CarruselDestacados';
 import { CarruselMasVendidos } from '@/components/tienda/CarruselMasVendidos';
@@ -82,8 +83,9 @@ export default function TiendaScreen() {
 
   if (!gymId) {
     return (
-      <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['bottom']}>
+      <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top']}>
         <ScrollView contentContainerStyle={styles.vacio}>
+          <TituloGrande titulo="Tienda" />
           <StateCard
             icon="bag-handle-outline"
             tone="brand"
@@ -103,6 +105,7 @@ export default function TiendaScreen() {
 
   const encabezado = (
     <View style={{ gap: Spacing.md, marginBottom: Spacing.md }}>
+      <TituloGrande titulo="Tienda" subtitulo={account.gym?.nombre} />
       {!comprador ? (
         <Card style={[styles.aviso, { borderColor: brand.warning }]}>
           <Ionicons name="hourglass-outline" size={18} color={brand.warning} />
@@ -170,7 +173,7 @@ export default function TiendaScreen() {
   );
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['bottom']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top']}>
       <FlatList
         data={productos ?? []}
         keyExtractor={(p) => p.id}
@@ -256,7 +259,7 @@ function TarjetaProducto({ producto }: { producto: Producto }) {
 
 const styles = StyleSheet.create({
   safe: { flex: 1 },
-  vacio: { padding: Spacing.xl },
+  vacio: { padding: Spacing.xl, gap: Spacing.lg },
   lista: { padding: Spacing.xl, gap: Spacing.md },
   aviso: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, borderWidth: 1.5, paddingVertical: Spacing.md },
   avisoTexto: { flex: 1, fontSize: 12.5, lineHeight: 17 },

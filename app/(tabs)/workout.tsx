@@ -12,6 +12,7 @@ import { IconCircle } from '@/components/ui/IconCircle';
 import { PrimaryButton } from '@/components/ui/PrimaryButton';
 import { Reveal } from '@/components/ui/Reveal';
 import { AnimatedPressable } from '@/components/ui/AnimatedPressable';
+import { TituloGrande } from '@/components/ui/TituloGrande';
 import { FontFamily, Spacing } from '@/constants/Theme';
 import { deleteWorkout, fetchWorkouts, type WorkoutSession } from '@/lib/api';
 
@@ -55,9 +56,9 @@ export default function WorkoutScreen() {
   }
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['bottom']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top']}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <Text style={[styles.heading, { color: colors.text }]}>Entrenar</Text>
+        <TituloGrande titulo="Entrenar" />
         <Text style={[styles.subtext, { color: colors.textSecondary }]}>
           Anota tus series y tu peso. Tu historial es tuyo, estés en un gimnasio o no.
         </Text>
@@ -183,7 +184,6 @@ const styles = StyleSheet.create({
   safe: { flex: 1 },
   centered: { alignItems: 'center', justifyContent: 'center' },
   scroll: { padding: Spacing.xl, paddingBottom: Spacing.xxxl, gap: Spacing.lg },
-  heading: { fontFamily: FontFamily.bold, fontSize: 22 },
   subtext: { fontSize: 13.5, lineHeight: 19, marginTop: -Spacing.sm },
   sectionLabel: { fontFamily: FontFamily.semiBold, fontSize: 11.5, letterSpacing: 0.6, marginTop: Spacing.sm },
   card: { gap: 0 },
