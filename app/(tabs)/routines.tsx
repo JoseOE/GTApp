@@ -12,6 +12,7 @@ import { IconCircle } from '@/components/ui/IconCircle';
 import { StateCard } from '@/components/ui/StateCard';
 import { Reveal } from '@/components/ui/Reveal';
 import { AnimatedPressable } from '@/components/ui/AnimatedPressable';
+import { TituloGrande } from '@/components/ui/TituloGrande';
 import { FontFamily, Spacing } from '@/constants/Theme';
 import { fetchMyRoutines, type Routine } from '@/lib/api';
 import { STARTER_ROUTINES, type StarterRoutine } from '@/constants/StarterRoutines';
@@ -82,9 +83,9 @@ export default function RoutinesScreen() {
   const grupos = groupByCategoria(restoDelGimnasio);
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['bottom']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top']}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <Text style={[styles.heading, { color: colors.text }]}>Rutinas</Text>
+        <TituloGrande titulo="Rutinas" />
 
         {/* Lo que puso el coach para hoy va primero: es lo que el usuario abre la app a buscar. */}
         {rutinasDeHoy.length > 0 ? (
@@ -298,7 +299,6 @@ const styles = StyleSheet.create({
   safe: { flex: 1 },
   centered: { alignItems: 'center', justifyContent: 'center' },
   scroll: { padding: Spacing.xl, paddingBottom: Spacing.xxxl, gap: Spacing.lg },
-  heading: { fontFamily: FontFamily.bold, fontSize: 22 },
   sectionLabel: { fontFamily: FontFamily.semiBold, fontSize: 11.5, letterSpacing: 0.6, marginTop: Spacing.sm },
   sectionHint: { fontSize: 12.5, lineHeight: 17, marginTop: -Spacing.md },
   categoryLabel: { fontFamily: FontFamily.semiBold, fontSize: 11.5, letterSpacing: 0.6 },

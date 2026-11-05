@@ -29,7 +29,8 @@ export function ListRow({
       scaleTo={0.98}
       haptic={false}
       style={[styles.row, bordered && { borderBottomWidth: 1, borderBottomColor: colors.border }]}>
-      <IconCircle name={icon} tone={danger ? 'danger' : 'brand'} size={38} />
+      {/* El color queda para lo que se toca primero; los íconos de las filas van en gris. */}
+      <IconCircle name={icon} tone={danger ? 'danger' : 'muted'} size={38} />
       <View style={{ flex: 1 }}>
         <Text style={[styles.rowLabel, { color: danger ? brand.danger : colors.text }]}>{label}</Text>
         {hint ? <Text style={[styles.rowHint, { color: colors.textSecondary }]}>{hint}</Text> : null}

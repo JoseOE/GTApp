@@ -10,6 +10,7 @@ import { IconCircle } from '@/components/ui/IconCircle';
 import { PrimaryButton } from '@/components/ui/PrimaryButton';
 import { StatTile } from '@/components/ui/StatTile';
 import { Reveal } from '@/components/ui/Reveal';
+import { TituloGrande } from '@/components/ui/TituloGrande';
 import { FontFamily, Radius, Spacing } from '@/constants/Theme';
 import { fetchWorkoutStats, type WorkoutStats } from '@/lib/api';
 
@@ -47,9 +48,9 @@ export default function ProgressScreen() {
 
   if (stats.totalSesiones === 0) {
     return (
-      <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['bottom']}>
+      <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top']}>
         <ScrollView contentContainerStyle={styles.scroll}>
-          <Text style={[styles.heading, { color: colors.text }]}>Progreso</Text>
+          <TituloGrande titulo="Progreso" />
           <Reveal index={0}>
             <Card style={styles.vacio}>
               <IconCircle name="stats-chart-outline" tone="muted" size={56} />
@@ -77,9 +78,9 @@ export default function ProgressScreen() {
   const maximo = musculos.length ? musculos[0][1] : 0;
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['bottom']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top']}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <Text style={[styles.heading, { color: colors.text }]}>Progreso</Text>
+        <TituloGrande titulo="Progreso" />
         <Text style={[styles.subtext, { color: colors.textSecondary }]}>
           Calculado con tus {stats.totalSesiones} {stats.totalSesiones === 1 ? 'entrenamiento' : 'entrenamientos'} registrados.
         </Text>
@@ -154,7 +155,6 @@ const styles = StyleSheet.create({
   safe: { flex: 1 },
   centered: { alignItems: 'center', justifyContent: 'center' },
   scroll: { padding: Spacing.xl, paddingBottom: Spacing.xxxl, gap: Spacing.lg },
-  heading: { fontFamily: FontFamily.bold, fontSize: 22 },
   subtext: { fontSize: 13.5, lineHeight: 19, marginTop: -Spacing.sm },
   sectionLabel: { fontFamily: FontFamily.semiBold, fontSize: 11.5, letterSpacing: 0.6, marginTop: Spacing.sm },
   statsRow: { flexDirection: 'row', gap: Spacing.md },

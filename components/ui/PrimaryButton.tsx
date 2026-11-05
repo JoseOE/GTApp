@@ -3,7 +3,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 
 import { AnimatedPressable } from './AnimatedPressable';
-import Colors from '@/constants/Colors';
+import { useTheme } from '@/hooks/useTheme';
 import { FontFamily, Radius, Shadow, Spacing } from '@/constants/Theme';
 
 type PrimaryButtonProps = {
@@ -24,6 +24,9 @@ export function PrimaryButton({
   variant = 'solid',
 }: PrimaryButtonProps) {
   const isDisabled = disabled || loading;
+  // Con el color del gimnasio (o el naranja de GymTrack), igual que el resto
+  // de la app; el texto toma el color que se lee sobre él.
+  const { brand, onPrimary } = useTheme();
 
   if (variant === 'outline') {
     return (
@@ -31,8 +34,8 @@ export function PrimaryButton({
         onPress={onPress}
         disabled={isDisabled}
         scaleTo={0.97}
-        style={[styles.outline, { opacity: isDisabled ? 0.5 : 1 }]}>
-        <ButtonContent label={label} icon={icon} loading={loading} textColor={Colors.brand.primary} />
+        style={[styles.outline, { borderColor: brand.primary, opacity: isDisabled ? 0.5 : 1 }]}>
+        <ButtonContent label={label} icon={icon} loading={loading} textColor={brand.primaryDark} />
       </AnimatedPressable>
     );
   }
@@ -42,13 +45,14 @@ export function PrimaryButton({
       onPress={onPress}
       disabled={isDisabled}
       scaleTo={0.96}
+      haptic
       style={{ opacity: isDisabled ? 0.6 : 1 }}>
       <LinearGradient
-        colors={[Colors.brand.primaryLight, Colors.brand.primary, Colors.brand.primaryDark]}
+        colors={[brand.primaryLight, brand.primary, brand.primaryDark]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={[styles.solid, Shadow.brand]}>
-        <ButtonContent label={label} icon={icon} loading={loading} textColor="#fff" />
+        style={[styles.solid, Shadow.brand, { shadowColor: brand.primary }]}>
+        <ButtonContent label={label} icon={icon} loading={loading} textColor={onPrimary} />
       </LinearGradient>
     </AnimatedPressable>
   );
@@ -92,7 +96,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1.5,
-    borderColor: Colors.brand.primary,
   },
   content: {
     flexDirection: 'row',

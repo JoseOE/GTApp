@@ -20,6 +20,8 @@ import { CarritoProvider } from '@/lib/CarritoContext';
 import { GymSplash } from '@/components/GymSplash';
 import { pedirPermiso, registrarParaPushRemoto, reprogramarRecordatorioDePago } from '@/lib/notifications';
 import { hexToRgb } from '@/lib/color';
+import { FUENTES_PORTADA } from '@/constants/Tipografias';
+import { FontFamily } from '@/constants/Theme';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -30,6 +32,8 @@ export default function RootLayout() {
     Poppins_600SemiBold,
     Poppins_700Bold,
     Poppins_800ExtraBold,
+    // Las letras que el gimnasio puede elegir para su nombre en la portada.
+    ...FUENTES_PORTADA,
   });
 
   useEffect(() => {
@@ -79,10 +83,13 @@ function RootNavigator() {
 
   const theme = Colors[colorScheme ?? 'light'];
   // Encabezado de las pantallas que se abren encima de las pestañas.
+  // Encabezado de las pantallas que se abren encima de las pestañas: del color
+  // del fondo, sin línea ni sombra, como las barras de iOS.
   const header = {
-    headerStyle: { backgroundColor: theme.headerBackground },
-    headerTitleStyle: { color: theme.headerText },
-    headerTintColor: theme.headerText,
+    headerStyle: { backgroundColor: theme.background },
+    headerTitleStyle: { color: theme.text, fontFamily: FontFamily.semiBold, fontSize: 17 },
+    headerTintColor: theme.text,
+    headerShadowVisible: false,
   };
   // La bienvenida de marca solo aplica a quien ya es miembro con acceso.
   const mostrarBienvenida = !bienvenidaVista && !!gym && account?.hasGymAccess === true;
@@ -104,9 +111,7 @@ function RootNavigator() {
             options={{
               presentation: 'modal',
               title: 'Vincular gimnasio',
-              headerStyle: { backgroundColor: theme.headerBackground },
-              headerTitleStyle: { color: theme.headerText },
-              headerTintColor: theme.headerText,
+              ...header,
             }}
           />
 
@@ -116,9 +121,7 @@ function RootNavigator() {
             options={{
               presentation: 'modal',
               title: 'Gimnasios',
-              headerStyle: { backgroundColor: theme.headerBackground },
-              headerTitleStyle: { color: theme.headerText },
-              headerTintColor: theme.headerText,
+              ...header,
             }}
           />
 
@@ -128,9 +131,7 @@ function RootNavigator() {
             options={{
               presentation: 'modal',
               title: 'Equipo del gimnasio',
-              headerStyle: { backgroundColor: theme.headerBackground },
-              headerTitleStyle: { color: theme.headerText },
-              headerTintColor: theme.headerText,
+              ...header,
             }}
           />
 
@@ -140,9 +141,7 @@ function RootNavigator() {
             options={{
               presentation: 'modal',
               title: 'Registrar entrenamiento',
-              headerStyle: { backgroundColor: theme.headerBackground },
-              headerTitleStyle: { color: theme.headerText },
-              headerTintColor: theme.headerText,
+              ...header,
             }}
           />
 
@@ -157,6 +156,9 @@ function RootNavigator() {
           <Stack.Screen name="pago-stripe" options={{ headerShown: false, animation: 'none' }} />
           <Stack.Screen name="pago-stripe-cancelado" options={{ headerShown: false, animation: 'none' }} />
           <Stack.Screen name="pedido/[orderId]" options={{ title: 'Pedido', ...header }} />
+
+          {/* Mi gimnasio: la ficha completa (horario, contacto, equipo) */}
+          <Stack.Screen name="mi-gimnasio" options={{ title: 'Mi gimnasio', ...header }} />
 
           {/* Mi cuenta: datos, contraseña y cerrar sesión */}
           <Stack.Screen name="cuenta" options={{ title: 'Mi cuenta', ...header }} />

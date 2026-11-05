@@ -22,12 +22,15 @@ type AnimatedPressableProps = PropsWithChildren<
  * (buttons, cards, list rows) so the "settle" feel is consistent everywhere,
  * with an optional light haptic tick — the native equivalent of the
  * magnetic/press micro-interactions used on the web buttons.
+ *
+ * La vibración va apagada por defecto: si todo vibra, deja de significar algo.
+ * Se pide (haptic) solo en las acciones que importan, como el botón principal.
  */
 export function AnimatedPressable({
   children,
   style,
   scaleTo = 0.96,
-  haptic = true,
+  haptic = false,
   onPressIn,
   onPressOut,
   ...rest
