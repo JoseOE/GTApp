@@ -157,6 +157,9 @@ function RootNavigator() {
           <Stack.Screen name="pago-stripe-cancelado" options={{ headerShown: false, animation: 'none' }} />
           <Stack.Screen name="pedido/[orderId]" options={{ title: 'Pedido', ...header }} />
 
+          {/* Mi gimnasio: la ficha completa (horario, contacto, equipo) */}
+          <Stack.Screen name="mi-gimnasio" options={{ title: 'Mi gimnasio', ...header }} />
+
           {/* Mi cuenta: datos, contraseña y cerrar sesión */}
           <Stack.Screen name="cuenta" options={{ title: 'Mi cuenta', ...header }} />
           <Stack.Screen name="cambiar-contrasena" options={{ title: 'Contraseña', ...header }} />
