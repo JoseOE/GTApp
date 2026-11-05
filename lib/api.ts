@@ -106,6 +106,10 @@ export type Gym = {
   // o dado de baja: esas pantallas también se pintan con los colores del gym.
   logo?: string | null;
   colorPrimario?: string | null;
+  // Portada de Inicio que arma el dueño en el panel: hasta 6 fotos
+  // (/api/imagenes/...) y la letra del nombre (constants/Tipografias).
+  fotos?: string[];
+  tipografia?: string | null;
   // El resto solo llega cuando la membresía está activa: el servidor recorta
   // la respuesta, así que un usuario dado de baja ni siquiera recibe los datos.
   telefono?: string;

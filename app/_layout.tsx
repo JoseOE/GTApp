@@ -20,6 +20,7 @@ import { CarritoProvider } from '@/lib/CarritoContext';
 import { GymSplash } from '@/components/GymSplash';
 import { pedirPermiso, registrarParaPushRemoto, reprogramarRecordatorioDePago } from '@/lib/notifications';
 import { hexToRgb } from '@/lib/color';
+import { FUENTES_PORTADA } from '@/constants/Tipografias';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -30,6 +31,8 @@ export default function RootLayout() {
     Poppins_600SemiBold,
     Poppins_700Bold,
     Poppins_800ExtraBold,
+    // Las letras que el gimnasio puede elegir para su nombre en la portada.
+    ...FUENTES_PORTADA,
   });
 
   useEffect(() => {
