@@ -127,6 +127,16 @@ export default function MiGimnasioScreen() {
               ) : null}
             </Grupo>
 
+            <Grupo titulo="Del gimnasio">
+              <FilaDato
+                icon="megaphone-outline"
+                etiqueta="Anuncios"
+                valor="Cierres, horarios y promociones"
+                onPress={() => router.push('/anuncios')}
+                ultima
+              />
+            </Grupo>
+
             <Grupo titulo="Instalaciones">
               {gym.equipamiento ? <FilaDato icon="barbell-outline" etiqueta="Equipamiento" valor={gym.equipamiento} /> : null}
               <FilaDato

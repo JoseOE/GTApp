@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { View } from 'react-native';
-import { Stack } from 'expo-router';
+import { router, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import {
@@ -18,7 +18,7 @@ import { GymBrandContext } from '@/hooks/useTheme';
 import { AccountProvider, useAccount } from '@/lib/AccountContext';
 import { CarritoProvider } from '@/lib/CarritoContext';
 import { GymSplash } from '@/components/GymSplash';
-import { pedirPermiso, registrarParaPushRemoto, reprogramarRecordatorioDePago } from '@/lib/notifications';
+import { alTocarNotificacion, pedirPermiso, registrarParaPushRemoto, reprogramarRecordatorioDePago } from '@/lib/notifications';
 import { hexToRgb } from '@/lib/color';
 import { FUENTES_PORTADA } from '@/constants/Tipografias';
 import { FontFamily } from '@/constants/Theme';
@@ -80,6 +80,22 @@ function RootNavigator() {
       cancelado = true;
     };
   }, [account]);
+
+  // Tocar la notificación de un anuncio del gimnasio abre la lista de anuncios.
+  useEffect(() => {
+    let quitar: (() => void) | null = null;
+    let activo = true;
+    alTocarNotificacion((datos) => {
+      if (datos.tipo === 'anuncio') router.push('/anuncios');
+    }).then((q) => {
+      if (activo) quitar = q;
+      else q();
+    });
+    return () => {
+      activo = false;
+      quitar?.();
+    };
+  }, []);
 
   const theme = Colors[colorScheme ?? 'light'];
   // Encabezado de las pantallas que se abren encima de las pestañas.
@@ -159,6 +175,7 @@ function RootNavigator() {
 
           {/* Mi gimnasio: la ficha completa (horario, contacto, equipo) */}
           <Stack.Screen name="mi-gimnasio" options={{ title: 'Mi gimnasio', ...header }} />
+          <Stack.Screen name="anuncios" options={{ title: 'Anuncios', ...header }} />
 
           {/* Mi cuenta: datos, contraseña y cerrar sesión */}
           <Stack.Screen name="cuenta" options={{ title: 'Mi cuenta', ...header }} />

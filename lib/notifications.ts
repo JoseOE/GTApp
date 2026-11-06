@@ -139,3 +139,14 @@ function formatearFecha(iso: string): string {
     'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
   return `${dia} de ${meses[mes - 1]}`;
 }
+
+// Al tocar una notificación (con la app abierta o desde la barra), se llama a
+// manejar con sus datos, p. ej. {tipo: 'anuncio'}. Devuelve cómo dejar de escuchar.
+export async function alTocarNotificacion(manejar: (datos: Record<string, unknown>) => void): Promise<() => void> {
+  const N = await cargar();
+  if (!N) return () => {};
+  const sub = N.addNotificationResponseReceivedListener((respuesta) => {
+    manejar((respuesta.notification.request.content.data ?? {}) as Record<string, unknown>);
+  });
+  return () => sub.remove();
+}
