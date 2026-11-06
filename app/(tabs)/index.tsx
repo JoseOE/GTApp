@@ -16,6 +16,7 @@ import { StateCard } from '@/components/ui/StateCard';
 import { Reveal } from '@/components/ui/Reveal';
 import { AnimatedPressable } from '@/components/ui/AnimatedPressable';
 import { PortadaGym } from '@/components/inicio/PortadaGym';
+import { AnunciosInicio } from '@/components/inicio/AnunciosInicio';
 import { Radius, Spacing, Type } from '@/constants/Theme';
 import { fetchMyRoutines, fetchWorkoutStats, type Account, type Routine, type WorkoutStats } from '@/lib/api';
 import { fetchPedidos, type Pedido } from '@/lib/tienda';
@@ -25,8 +26,9 @@ const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
   'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 
 // Inicio: la portada del gimnasio y, debajo, solo lo que sirve hoy:
-// los avisos que piden hacer algo, el entrenamiento del día, la semana en
-// cifras y el acceso a Mi gimnasio (donde vive la ficha completa).
+// los avisos que piden hacer algo, los anuncios del gimnasio, el
+// entrenamiento del día, la semana en cifras y el acceso a Mi gimnasio
+// (donde vive la ficha completa).
 export default function HomeScreen() {
   const { colors, brand, scheme } = useTheme();
   const { account, loading, error, reload } = useAccount();
@@ -82,6 +84,8 @@ export default function HomeScreen() {
           </View>
 
           <Avisos account={account} />
+
+          <AnunciosInicio account={account} />
 
           <EntrenarHoy account={account} />
 
