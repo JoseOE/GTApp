@@ -1,0 +1,42 @@
+# Revisión automática de la app en cada PR y en cada cambio a main.
+# Si algo de esto falla, el APK de EAS tampoco saldría bien.
+name: Revisión
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  app:
+    name: Tipos, Expo y bundle
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar el repositorio
+        uses: actions/checkout@v4
+
+      - name: Node 24
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+
+      # postinstall aplica los parches de patches/ (patch-package).
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Revisar los tipos (TypeScript)
+        run: npm run typecheck
+
+      # Versiones de los paquetes contra el SDK de Expo, app.json, etc.
+      - name: Revisar el proyecto de Expo
+        run: npx --yes expo-doctor@latest
+
+      # Arma el bundle de Android con Metro: encuentra imports rotos,
+      # imágenes que no existen y errores que TypeScript no ve.
+      - name: Armar el bundle de Android
+        run: npx expo export --platform android --output-dir dist
