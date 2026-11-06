@@ -64,6 +64,25 @@ Para instalarlo, abre el enlace en el teléfono Android y permite "Instalar apps
 
 El perfil `production` genera el `.aab` para Google Play.
 
+## Revisión automática (CI)
+
+Cada PR y cada cambio a `main` corre [.github/workflows/ci.yml](.github/workflows/ci.yml):
+
+1. `npm ci`, que también aplica los parches de `patches/`.
+2. `npm run typecheck`: revisa los tipos con TypeScript.
+3. `npx expo-doctor`: revisa que las versiones de los paquetes sean las del SDK de Expo.
+4. `npx expo export --platform android`: arma el bundle con Metro y encuentra imports rotos o imágenes que no existen.
+
+Antes de abrir un PR puedes correr lo mismo en tu computadora:
+
+```bash
+npm run typecheck
+```
+
+```bash
+npx expo-doctor
+```
+
 ## Sesión
 
 El login y el registro devuelven un `token`. La app lo guarda y lo manda en cada llamada como `Authorization: Bearer <token>` (junto con `X-User-Id` mientras dure la transición). Si el servidor responde `{sesionVencida: true}`, la app borra la sesión y vuelve al login. Con esto ya se puede activar `EXIGIR_TOKEN=true` en Render.
