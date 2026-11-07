@@ -38,6 +38,14 @@ function estadoMembresia(account: Account): { texto: string; color: string } | n
   return { texto: hasta ? `Membresía activa · hasta ${hasta}` : 'Membresía activa', color: '#34D17A' };
 }
 
+// Medidas de la portada que también usa la bienvenida (GymSplash) para
+// terminar justo donde queda la portada.
+export const altoPortada = (ancho: number, arriba: number) => Math.round(Math.min(ancho * 0.92, 440)) + arriba;
+const TAMANO_NOMBRE = 42;
+export const tamanoNombrePortada = (tipografia?: string | null) => Math.round(TAMANO_NOMBRE * tipografiaDe(tipografia).escala);
+// Del borde de abajo de la portada al pie del nombre: margen + la píldora del estado.
+export const PIE_NOMBRE_PORTADA = Spacing.xl + 6 + Spacing.xs + Spacing.xs + 30;
+
 // La portada de Inicio: las fotos del gimnasio pasando una tras otra, con su
 // nombre encima en la letra que eligió el dueño en el panel web. Al tocarla
 // se abre Mi gimnasio. Sin gimnasio, es la portada de GymTrack.
@@ -52,7 +60,7 @@ export function PortadaGym({ account }: { account: Account }) {
 
   const gym = account.gym;
   const fotos = (gym?.fotos ?? []).map(urlImagen).filter((u): u is string => !!u);
-  const alto = Math.round(Math.min(width * 0.92, 440)) + insets.top;
+  const alto = altoPortada(width, insets.top);
   const letra = tipografiaDe(gym?.tipografia);
   const estado = estadoMembresia(account);
 
@@ -71,7 +79,7 @@ export function PortadaGym({ account }: { account: Account }) {
   }, [fotos.length, reducir, width]);
 
   const nombre = gym?.nombre ?? 'GymTrack';
-  const tamano = Math.round(42 * (gym ? letra.escala : 1));
+  const tamano = gym ? tamanoNombrePortada(gym.tipografia) : TAMANO_NOMBRE;
 
   // Tocar la portada abre Mi gimnasio (o vincular uno). Va en cada foto y no
   // en todo el bloque, para no meter el botón de Mi cuenta dentro de otro botón.

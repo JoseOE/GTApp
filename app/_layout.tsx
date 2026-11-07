@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
-import { router, Stack } from 'expo-router';
+import { router, Stack, usePathname } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import {
@@ -18,6 +18,7 @@ import { GymBrandContext } from '@/hooks/useTheme';
 import { AccountProvider, useAccount } from '@/lib/AccountContext';
 import { CarritoProvider } from '@/lib/CarritoContext';
 import { GymSplash } from '@/components/GymSplash';
+import { guardarMarca, leerMarca, marcaDe, type Marca } from '@/lib/marcaGuardada';
 import { alTocarNotificacion, pedirPermiso, registrarParaPushRemoto, reprogramarRecordatorioDePago } from '@/lib/notifications';
 import { hexToRgb } from '@/lib/color';
 import { FUENTES_PORTADA } from '@/constants/Tipografias';
@@ -36,12 +37,8 @@ export default function RootLayout() {
     ...FUENTES_PORTADA,
   });
 
-  useEffect(() => {
-    if (fontsLoaded || fontError) {
-      SplashScreen.hideAsync();
-    }
-  }, [fontsLoaded, fontError]);
-
+  // La pantalla de carga nativa (logo de GymTrack) se quita en RootNavigator,
+  // cuando ya se sabe qué bienvenida mostrar: así no queda un "cargando" en medio.
   if (!fontsLoaded && !fontError) {
     return null;
   }
@@ -57,8 +54,34 @@ export default function RootLayout() {
 
 function RootNavigator() {
   const colorScheme = useColorScheme();
-  const { account } = useAccount();
+  const { account, loading } = useAccount();
+  const pathname = usePathname();
   const [bienvenidaVista, setBienvenidaVista] = useState(false);
+  // La marca guardada en el teléfono (undefined = todavía leyéndola): con ella
+  // la bienvenida sale al instante, sin esperar al servidor.
+  const [marcaGuardada, setMarcaGuardada] = useState<Marca | null | undefined>(undefined);
+  const [esperaVencida, setEsperaVencida] = useState(false);
+  // La marca de la bienvenida se fija al empezar, para que no cambie a medias.
+  const marcaBienvenida = useRef<Marca | null>(null);
+
+  useEffect(() => {
+    leerMarca().then(setMarcaGuardada);
+    // Si el servidor tarda demasiado, se sigue sin bienvenida.
+    const t = setTimeout(() => setEsperaVencida(true), 6000);
+    return () => clearTimeout(t);
+  }, []);
+
+  // Cada vez que llega la cuenta, se guarda (o se borra) su marca para la próxima vez.
+  useEffect(() => {
+    if (!loading) guardarMarca(marcaDe(account));
+  }, [account, loading]);
+
+  // Se quita el logo de GymTrack en cuanto hay algo que mostrar: la marca
+  // guardada, la cuenta ya cargada o, si tarda, a los 6 s.
+  const puedeOcultarCarga = marcaGuardada !== undefined && (!!marcaGuardada || !loading || esperaVencida);
+  useEffect(() => {
+    if (puedeOcultarCarga) SplashScreen.hideAsync();
+  }, [puedeOcultarCarga]);
 
   const gym = account?.gym ?? null;
   // Solo se acepta un hex válido: si el gimnasio guardó basura, se usa la marca.
@@ -108,7 +131,10 @@ function RootNavigator() {
     headerShadowVisible: false,
   };
   // La bienvenida de marca solo aplica a quien ya es miembro con acceso.
-  const mostrarBienvenida = !bienvenidaVista && !!gym && account?.hasGymAccess === true;
+  if (!bienvenidaVista && !marcaBienvenida.current) {
+    marcaBienvenida.current = marcaDe(account) ?? (loading ? marcaGuardada ?? null : null);
+  }
+  const mostrarBienvenida = !bienvenidaVista && !!marcaBienvenida.current && puedeOcultarCarga;
 
   return (
     <GymBrandContext.Provider value={colorDelGym}>
@@ -186,11 +212,11 @@ function RootNavigator() {
           <Stack.Screen name="+not-found" options={{ title: 'No encontrado' }} />
         </Stack>
 
-        {mostrarBienvenida && gym ? (
+        {mostrarBienvenida && marcaBienvenida.current ? (
           <GymSplash
-            logo={gym.logo}
-            nombre={gym.nombre}
-            color={colorDelGym}
+            marca={marcaBienvenida.current}
+            listo={!loading}
+            convertirEnPortada={pathname === '/'}
             onDone={() => setBienvenidaVista(true)}
           />
         ) : null}
