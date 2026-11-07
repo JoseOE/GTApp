@@ -13,6 +13,7 @@ import { PrimaryButton } from '@/components/ui/PrimaryButton';
 import { AnimatedPressable } from '@/components/ui/AnimatedPressable';
 import { Estrellas } from '@/components/tienda/Estrellas';
 import { AdvertenciaSanitaria } from '@/components/tienda/AdvertenciaSanitaria';
+import { AgregadoAlCarrito, type Agregado } from '@/components/tienda/AgregadoAlCarrito';
 import { Resenas } from '@/components/tienda/Resenas';
 import { FontFamily, Radius, Spacing } from '@/constants/Theme';
 import { ApiError } from '@/lib/api';
@@ -34,6 +35,8 @@ export default function ProductoScreen() {
   const [varianteId, setVarianteId] = useState<string | null>(null);
   const [cantidad, setCantidad] = useState(1);
   const [agregando, setAgregando] = useState(false);
+  // Lo que se acaba de agregar: abre la hoja de confirmación.
+  const [agregado, setAgregado] = useState<Agregado | null>(null);
 
   const cargar = useCallback(async () => {
     if (!gymId || !id) return;
@@ -80,11 +83,15 @@ export default function ProductoScreen() {
     if (!variante) return;
     setAgregando(true);
     try {
-      await agregar(variante.id, cantidad);
-      Alert.alert('Agregado al carrito', `${producto!.nombre}${cantidad > 1 ? ` × ${cantidad}` : ''}`, [
-        { text: 'Seguir comprando', style: 'cancel' },
-        { text: 'Ver carrito', onPress: () => router.push('/carrito') },
-      ]);
+      const carrito = await agregar(variante.id, cantidad);
+      setAgregado({
+        nombre: producto!.nombre,
+        detalle: producto!.variantes.length > 1 ? variante.nombre : null,
+        cantidad,
+        imagen: producto!.imagen,
+        articulos: carrito.articulos,
+        total: carrito.total,
+      });
     } catch (err) {
       Alert.alert('No se pudo agregar', err instanceof ApiError ? err.message : 'Inténtalo de nuevo.');
     } finally {
@@ -224,6 +231,15 @@ export default function ProductoScreen() {
           </Text>
         )}
       </View>
+
+      <AgregadoAlCarrito
+        agregado={agregado}
+        onCerrar={() => setAgregado(null)}
+        onVerCarrito={() => {
+          setAgregado(null);
+          router.push('/carrito');
+        }}
+      />
     </SafeAreaView>
   );
 }
