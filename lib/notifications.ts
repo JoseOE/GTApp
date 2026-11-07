@@ -20,7 +20,13 @@ import { registerPushToken, type Account } from './api';
 
 type ModuloNotificaciones = typeof import('expo-notifications');
 
-const CANAL_ANDROID = 'gymtrack-avisos';
+// Canal de Android con importancia máxima: así el aviso sale flotante (arriba
+// de la pantalla, como un mensaje) aunque la app esté cerrada. Android no deja
+// subir la importancia de un canal que ya existe, por eso es uno nuevo; el
+// anterior (importancia normal, sin aviso flotante) se borra. El servidor
+// manda sus avisos a este mismo canal (PushService en GTWeb).
+export const CANAL_ANDROID = 'gymtrack-alertas';
+const CANAL_ANTERIOR = 'gymtrack-avisos';
 const ID_RECORDATORIO = 'recordatorio-pago';
 const DIAS_DE_AVISO = 5;
 
@@ -60,9 +66,16 @@ export async function pedirPermiso(): Promise<boolean> {
   if (!Notifications) return false;
 
   if (Platform.OS === 'android') {
+    await Notifications.deleteNotificationChannelAsync(CANAL_ANTERIOR).catch(() => {});
     await Notifications.setNotificationChannelAsync(CANAL_ANDROID, {
       name: 'Avisos de GymTrack',
-      importance: Notifications.AndroidImportance.DEFAULT,
+      description: 'Anuncios de tu gimnasio, tu solicitud y tu mensualidad.',
+      importance: Notifications.AndroidImportance.MAX,
+      sound: 'default',
+      vibrationPattern: [0, 250, 150, 250],
+      lightColor: '#f45124',
+      lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+      showBadge: true,
     });
   }
 
@@ -123,6 +136,7 @@ export async function reprogramarRecordatorioDePago(account: Account | null) {
     trigger: {
       type: Notifications.SchedulableTriggerInputTypes.DATE,
       date: aviso,
+      channelId: CANAL_ANDROID,
     },
   });
 }
