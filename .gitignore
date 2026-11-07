@@ -39,3 +39,7 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# Configuración de Firebase del APK: no se sube; EAS la recibe como variable
+# de tipo archivo (GOOGLE_SERVICES_JSON). Ver app.config.js.
+google-services.json
