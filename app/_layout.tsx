@@ -19,7 +19,14 @@ import { AccountProvider, useAccount } from '@/lib/AccountContext';
 import { CarritoProvider } from '@/lib/CarritoContext';
 import { GymSplash } from '@/components/GymSplash';
 import { guardarMarca, leerMarca, marcaDe, type Marca } from '@/lib/marcaGuardada';
-import { alTocarNotificacion, pedirPermiso, registrarParaPushRemoto, reprogramarRecordatorioDePago } from '@/lib/notifications';
+import {
+  alRecibirNotificacion,
+  alTocarNotificacion,
+  pedirPermiso,
+  registrarParaPushRemoto,
+  reprogramarRecordatorioDePago,
+} from '@/lib/notifications';
+import { AvisoRenovacion } from '@/components/AvisoRenovacion';
 import { hexToRgb } from '@/lib/color';
 import { FUENTES_PORTADA } from '@/constants/Tipografias';
 import { FontFamily } from '@/constants/Theme';
@@ -104,19 +111,32 @@ function RootNavigator() {
     };
   }, [account]);
 
-  // Tocar la notificación de un anuncio del gimnasio abre la lista de anuncios.
+  // Tocar una notificación (con la app abierta o cerrada) abre su pantalla:
+  // la de un anuncio, la lista de anuncios; la de membresía vencida en la
+  // puerta, Renovar membresía.
+  // Si llega con la app abierta, la de membresía vencida sale como aviso
+  // dentro de la app, con "Renovar ahora".
+  const [avisoRenovar, setAvisoRenovar] = useState<{ titulo: string; texto: string } | null>(null);
   useEffect(() => {
-    let quitar: (() => void) | null = null;
+    const quitar: (() => void)[] = [];
     let activo = true;
+    const guardar = (q: () => void) => {
+      if (activo) quitar.push(q);
+      else q();
+    };
     alTocarNotificacion((datos) => {
       if (datos.tipo === 'anuncio') router.push('/anuncios');
-    }).then((q) => {
-      if (activo) quitar = q;
-      else q();
-    });
+      if (datos.tipo === 'renovar_membresia') {
+        setAvisoRenovar(null);
+        router.push('/renovar-membresia');
+      }
+    }).then(guardar);
+    alRecibirNotificacion(({ titulo, texto, datos }) => {
+      if (datos.tipo === 'renovar_membresia') setAvisoRenovar({ titulo, texto });
+    }).then(guardar);
     return () => {
       activo = false;
-      quitar?.();
+      quitar.forEach((q) => q());
     };
   }, []);
 
@@ -213,6 +233,18 @@ function RootNavigator() {
           {/* Página de error no encontrada */}
           <Stack.Screen name="+not-found" options={{ title: 'No encontrado' }} />
         </Stack>
+
+        {avisoRenovar ? (
+          <AvisoRenovacion
+            titulo={avisoRenovar.titulo}
+            texto={avisoRenovar.texto}
+            onCerrar={() => setAvisoRenovar(null)}
+            onRenovar={() => {
+              setAvisoRenovar(null);
+              router.push('/renovar-membresia');
+            }}
+          />
+        ) : null}
 
         {mostrarBienvenida && marcaBienvenida.current ? (
           <GymSplash
