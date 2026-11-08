@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Linking, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { router, useFocusEffect } from 'expo-router';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -17,6 +17,11 @@ import { useAccount } from '@/lib/AccountContext';
 import { useCarrito } from '@/lib/CarritoContext';
 import { dinero } from '@/lib/formato';
 import { fechaVencimiento, fetchRenovacion, prepararRenovacion, type Renovacion } from '@/lib/renovacion';
+import { ResultadoRenovacion } from '@/components/renovacion/ResultadoRenovacion';
+
+// Al volver del pago, si todavía no se ve renovada, se pregunta otra vez
+// cada 2 s unas cuantas veces (el pago con tarjeta o PayPal tarda un momento).
+const REINTENTOS = 5;
 
 // "4:07" a partir de los milisegundos que faltan.
 function reloj(ms: number) {
@@ -39,6 +44,10 @@ export default function RenovarMembresiaScreen() {
   const [preparando, setPreparando] = useState(false);
   const [refrescando, setRefrescando] = useState(false);
   const [ahora, setAhora] = useState(Date.now());
+  // pagado=1: viene del checkout de la renovación (metodo, orderId del pedido).
+  const { pagado, metodo, orderId } = useLocalSearchParams<{ pagado?: string; metodo?: string; orderId?: string }>();
+  const volvioDelPago = pagado === '1';
+  const [intentos, setIntentos] = useState(0);
 
   const cargar = useCallback(async () => {
     try {
@@ -73,6 +82,19 @@ export default function RenovarMembresiaScreen() {
   useEffect(() => {
     if (pendiente && restante <= 0) cargar();
   }, [pendiente, restante <= 0, cargar]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Mientras el pago se confirma: la puerta todavía no se ve abierta y la
+  // membresía sigue vencida.
+  const esperandoConfirmacion =
+    volvioDelPago && metodo !== 'paynet' && !!datos && datos.vencida && !(datos.puerta?.estado === 'APROBADA');
+  useEffect(() => {
+    if (!esperandoConfirmacion || intentos >= REINTENTOS) return;
+    const t = setTimeout(() => {
+      setIntentos((n) => n + 1);
+      cargar();
+    }, 2000);
+    return () => clearTimeout(t);
+  }, [esperandoConfirmacion, intentos, cargar]);
 
   async function refrescar() {
     setRefrescando(true);
@@ -114,6 +136,18 @@ export default function RenovarMembresiaScreen() {
           ) : (
             <ActivityIndicator color={brand.primary} style={{ marginTop: Spacing.xxl }} />
           )}
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
+  if (volvioDelPago) {
+    return (
+      <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['bottom']}>
+        <ScrollView
+          contentContainerStyle={styles.scroll}
+          refreshControl={<RefreshControl refreshing={refrescando} onRefresh={refrescar} tintColor={brand.primary} />}>
+          <ResultadoRenovacion datos={datos} metodo={metodo} orderId={orderId} confirmando={esperandoConfirmacion && intentos < REINTENTOS} />
         </ScrollView>
       </SafeAreaView>
     );
