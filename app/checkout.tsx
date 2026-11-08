@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { router, useFocusEffect } from 'expo-router';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as WebBrowser from 'expo-web-browser';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -81,6 +81,10 @@ export default function CheckoutScreen() {
   const [avisoTerminos, setAvisoTerminos] = useState<string | null>(null);
   const [procesando, setProcesando] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // renovacion=1: se paga la renovación preparada en "Renovar membresía";
+  // al terminar se vuelve ahí para ver si la puerta se abrió.
+  const { renovacion } = useLocalSearchParams<{ renovacion?: string }>();
+  const esRenovacion = renovacion === '1';
 
   useFocusEffect(
     useCallback(() => {
@@ -167,7 +171,11 @@ export default function CheckoutScreen() {
       const pedido = await pagarCarrito(metodo, datos, total, consentimiento);
       // El carrito ya se pagó: el siguiente producto abre uno nuevo.
       await recargar();
-      router.replace({ pathname: '/pedido/[orderId]', params: { orderId: pedido.orderId } });
+      if (esRenovacion) {
+        router.replace({ pathname: '/renovar-membresia', params: { pagado: '1', metodo, orderId: pedido.orderId } });
+      } else {
+        router.replace({ pathname: '/pedido/[orderId]', params: { orderId: pedido.orderId } });
+      }
     } catch (err) {
       const e = err instanceof ApiError ? err : new ApiError('No se pudo completar el pago. Inténtalo de nuevo.');
       if (e.status === 409 && e.data.carrito) {
@@ -252,6 +260,15 @@ export default function CheckoutScreen() {
             </Card>
           ) : null}
 
+          {esRenovacion && metodo === 'paynet' ? (
+            <View style={[styles.notaRenovacion, { backgroundColor: brand.warning + '14', borderColor: brand.warning + '55' }]}>
+              <Ionicons name="time-outline" size={18} color={brand.warning} />
+              <Text style={[styles.partidaTexto, { color: colors.text, flex: 1 }]}>
+                Con efectivo en tienda la puerta no se abre en el momento: tu membresía se renueva cuando pagues la ficha. Después pasa tu tarjeta.
+              </Text>
+            </View>
+          ) : null}
+
           {metodo === 'paypal' ? (
             <Card>
               <MetodoPaypal simular={simularPaypal} onSimular={setSimularPaypal} />
@@ -307,6 +324,7 @@ const styles = StyleSheet.create({
   seccion: { fontFamily: FontFamily.semiBold, fontSize: 15 },
   partida: { flexDirection: 'row', justifyContent: 'space-between', gap: Spacing.md },
   partidaTexto: { fontSize: 13.5, flexShrink: 1 },
+  notaRenovacion: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, borderWidth: 1, borderRadius: Radius.lg, padding: Spacing.md },
   metodo: { borderWidth: 1.5, borderRadius: Radius.lg, padding: Spacing.lg, gap: Spacing.md },
   metodoCabeza: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.sm },
   metodoTitulo: { fontFamily: FontFamily.semiBold, fontSize: 14.5 },
