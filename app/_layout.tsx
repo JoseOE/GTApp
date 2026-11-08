@@ -202,6 +202,8 @@ function RootNavigator() {
           {/* Mi gimnasio: la ficha completa (horario, contacto, equipo) */}
           <Stack.Screen name="mi-gimnasio" options={{ title: 'Mi gimnasio', ...header }} />
           <Stack.Screen name="anuncios" options={{ title: 'Anuncios', ...header }} />
+          {/* Renovar desde la puerta: la abre el push de membresía vencida */}
+          <Stack.Screen name="renovar-membresia" options={{ title: 'Renovar membresía', ...header }} />
 
           {/* Mi cuenta: datos, contraseña y cerrar sesión */}
           <Stack.Screen name="cuenta" options={{ title: 'Mi cuenta', ...header }} />
