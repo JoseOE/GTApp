@@ -27,6 +27,8 @@ type ModuloNotificaciones = typeof import('expo-notifications');
 // manda sus avisos a este mismo canal (PushService en GTWeb).
 export const CANAL_ANDROID = 'gymtrack-alertas';
 const CANAL_ANTERIOR = 'gymtrack-avisos';
+// Avisos que, con la app en primer plano, se muestran dentro de la app.
+const TIPOS_CON_AVISO_PROPIO = ['renovar_membresia'];
 const ID_RECORDATORIO = 'recordatorio-pago';
 const DIAS_DE_AVISO = 5;
 
@@ -46,12 +48,17 @@ async function cargar(): Promise<ModuloNotificaciones | null> {
   try {
     const cargado = await import('expo-notifications');
     cargado.setNotificationHandler({
-      handleNotification: async () => ({
-        shouldPlaySound: true,
-        shouldSetBadge: false,
-        shouldShowBanner: true,
-        shouldShowList: true,
-      }),
+      // Con la app abierta, el aviso de renovar la membresía no sale como
+      // notificación del sistema: la app muestra el suyo, con "Renovar ahora".
+      handleNotification: async (notificacion) => {
+        const propio = TIPOS_CON_AVISO_PROPIO.includes(String(notificacion.request.content.data?.tipo ?? ''));
+        return {
+          shouldPlaySound: true,
+          shouldSetBadge: false,
+          shouldShowBanner: !propio,
+          shouldShowList: true,
+        };
+      },
     });
     modulo = cargado;
   } catch {
@@ -156,11 +163,34 @@ function formatearFecha(iso: string): string {
 
 // Al tocar una notificación (con la app abierta o desde la barra), se llama a
 // manejar con sus datos, p. ej. {tipo: 'anuncio'}. Devuelve cómo dejar de escuchar.
+// Si la app estaba cerrada y se abrió al tocar la notificación, también se
+// atiende (una sola vez: después se olvida).
 export async function alTocarNotificacion(manejar: (datos: Record<string, unknown>) => void): Promise<() => void> {
   const N = await cargar();
   if (!N) return () => {};
   const sub = N.addNotificationResponseReceivedListener((respuesta) => {
     manejar((respuesta.notification.request.content.data ?? {}) as Record<string, unknown>);
+  });
+  const conLaQueAbrio = await N.getLastNotificationResponseAsync().catch(() => null);
+  if (conLaQueAbrio) {
+    await N.clearLastNotificationResponseAsync().catch(() => {});
+    manejar((conLaQueAbrio.notification.request.content.data ?? {}) as Record<string, unknown>);
+  }
+  return () => sub.remove();
+}
+
+// Cuando llega una notificación con la app en primer plano: título, texto y datos.
+export async function alRecibirNotificacion(
+  manejar: (aviso: { titulo: string; texto: string; datos: Record<string, unknown> }) => void
+): Promise<() => void> {
+  const N = await cargar();
+  if (!N) return () => {};
+  const sub = N.addNotificationReceivedListener((n) => {
+    manejar({
+      titulo: n.request.content.title ?? '',
+      texto: n.request.content.body ?? '',
+      datos: (n.request.content.data ?? {}) as Record<string, unknown>,
+    });
   });
   return () => sub.remove();
 }
