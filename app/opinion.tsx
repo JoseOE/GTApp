@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -13,6 +13,7 @@ import { FontFamily, Radius, Spacing } from '@/constants/Theme';
 import { ApiError } from '@/lib/api';
 import { useAccount } from '@/lib/AccountContext';
 import { borrarOpinion, fetchMiOpinion, guardarOpinion, MAX_OPINION, MIN_OPINION, type Opinion } from '@/lib/opiniones';
+import { FormularioConTeclado } from '@/components/ui/FormularioConTeclado';
 
 const TEXTOS = ['', 'Mala', 'Regular', 'Buena', 'Muy buena', 'Excelente'];
 
@@ -88,55 +89,53 @@ export default function OpinionScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['bottom']}>
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-          <Text style={[styles.intro, { color: colors.textSecondary }]}>
-            ¿Cómo te ha ido con GymTrack{account?.gym ? ` en ${account.gym.nombre}` : ''}? Con 4 estrellas o más, tu opinión aparece en la página de
-            inicio con tu nombre corto y la foto de tu gimnasio.
+      <FormularioConTeclado contentContainerStyle={styles.scroll}>
+        <Text style={[styles.intro, { color: colors.textSecondary }]}>
+          ¿Cómo te ha ido con GymTrack{account?.gym ? ` en ${account.gym.nombre}` : ''}? Con 4 estrellas o más, tu opinión aparece en la página de
+          inicio con tu nombre corto y la foto de tu gimnasio.
+        </Text>
+
+        <Card style={{ gap: Spacing.md }}>
+          <View style={styles.estrellas}>
+            {[1, 2, 3, 4, 5].map((n) => (
+              <AnimatedPressable
+                key={n}
+                onPress={() => setEstrellas(n)}
+                scaleTo={0.8}
+                accessibilityRole="radio"
+                accessibilityState={{ checked: estrellas === n }}
+                accessibilityLabel={`${n} ${n === 1 ? 'estrella' : 'estrellas'}`}>
+                <Ionicons name={estrellas >= n ? 'star' : 'star-outline'} size={40} color={COLOR_ESTRELLA} />
+              </AnimatedPressable>
+            ))}
+          </View>
+          <Text style={[styles.textoEstrellas, { color: colors.text }]}>{TEXTOS[estrellas] || 'Toca las estrellas'}</Text>
+
+          <TextInput
+            value={texto}
+            onChangeText={setTexto}
+            placeholder="¿Qué te ha gustado? ¿Qué mejorarías?"
+            placeholderTextColor={colors.textSecondary}
+            multiline
+            maxLength={MAX_OPINION}
+            style={[styles.texto, { color: colors.text, borderColor: colors.border, backgroundColor: colors.background }]}
+          />
+          <Text style={[styles.contador, { color: colors.textSecondary }]}>
+            {texto.trim().length}/{MAX_OPINION}
           </Text>
 
-          <Card style={{ gap: Spacing.md }}>
-            <View style={styles.estrellas}>
-              {[1, 2, 3, 4, 5].map((n) => (
-                <AnimatedPressable
-                  key={n}
-                  onPress={() => setEstrellas(n)}
-                  scaleTo={0.8}
-                  accessibilityRole="radio"
-                  accessibilityState={{ checked: estrellas === n }}
-                  accessibilityLabel={`${n} ${n === 1 ? 'estrella' : 'estrellas'}`}>
-                  <Ionicons name={estrellas >= n ? 'star' : 'star-outline'} size={40} color={COLOR_ESTRELLA} />
-                </AnimatedPressable>
-              ))}
-            </View>
-            <Text style={[styles.textoEstrellas, { color: colors.text }]}>{TEXTOS[estrellas] || 'Toca las estrellas'}</Text>
+          {error ? <ErrorBox message={error} /> : null}
+          {aviso ? <Text style={[styles.aviso, { color: brand.success }]}>{aviso}</Text> : null}
 
-            <TextInput
-              value={texto}
-              onChangeText={setTexto}
-              placeholder="¿Qué te ha gustado? ¿Qué mejorarías?"
-              placeholderTextColor={colors.textSecondary}
-              multiline
-              maxLength={MAX_OPINION}
-              style={[styles.texto, { color: colors.text, borderColor: colors.border, backgroundColor: colors.background }]}
-            />
-            <Text style={[styles.contador, { color: colors.textSecondary }]}>
-              {texto.trim().length}/{MAX_OPINION}
-            </Text>
-
-            {error ? <ErrorBox message={error} /> : null}
-            {aviso ? <Text style={[styles.aviso, { color: brand.success }]}>{aviso}</Text> : null}
-
-            <PrimaryButton
-              label={actual ? 'Actualizar opinión' : 'Publicar opinión'}
-              icon={actual ? 'save-outline' : 'send-outline'}
-              onPress={guardar}
-              loading={guardando}
-            />
-            {actual ? <PrimaryButton label="Borrar mi opinión" icon="trash-outline" variant="outline" onPress={borrar} /> : null}
-          </Card>
-        </ScrollView>
-      </KeyboardAvoidingView>
+          <PrimaryButton
+            label={actual ? 'Actualizar opinión' : 'Publicar opinión'}
+            icon={actual ? 'save-outline' : 'send-outline'}
+            onPress={guardar}
+            loading={guardando}
+          />
+          {actual ? <PrimaryButton label="Borrar mi opinión" icon="trash-outline" variant="outline" onPress={borrar} /> : null}
+        </Card>
+      </FormularioConTeclado>
     </SafeAreaView>
   );
 }
