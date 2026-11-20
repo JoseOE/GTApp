@@ -1,5 +1,7 @@
 # GTApp — Aplicación móvil de GymTrack
 
+> **Tu gimnasio. Tu visión. Otro nivel.**
+
 App móvil de **GymTrack** para los miembros de los gimnasios (lado B2C del ecosistema B2B2C). Desarrollada con **React Native, Expo (SDK 57), Expo Router y TypeScript**.
 
 La plataforma web administrativa y el backend (Spring Boot + MongoDB Atlas) viven en el repositorio [GTWeb](https://github.com/JoseOE/GTWeb).

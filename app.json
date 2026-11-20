@@ -1,6 +1,7 @@
 {
   "expo": {
     "name": "GymTrack",
+    "description": "Tu gimnasio. Tu visión. Otro nivel. App de GymTrack para los socios: membresía, rutinas, progreso y tienda.",
     "slug": "AppMovil",
     "version": "1.0.0",
     "orientation": "portrait",
