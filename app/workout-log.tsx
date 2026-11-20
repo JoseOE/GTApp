@@ -1,9 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  KeyboardAvoidingView,
   Modal,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -25,6 +23,7 @@ import { ErrorBox, Field } from '@/components/ui/Field';
 import { FontFamily, Radius, Spacing } from '@/constants/Theme';
 import { ApiError, fetchMyMachines, saveWorkout, type LoggedExercise, type Machine } from '@/lib/api';
 import { EJERCICIOS_LIBRES } from '@/constants/StarterRoutines';
+import { FormularioConTeclado } from '@/components/ui/FormularioConTeclado';
 
 // Registrar un entrenamiento: eliges ejercicios (de las máquinas de tu gimnasio
 // o del catálogo libre) y anotas serie por serie las repeticiones y el peso.
@@ -149,146 +148,144 @@ export default function WorkoutLogScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['bottom']}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
-        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-          <View style={styles.encabezado}>
-            <Field
-              label="¿Qué entrenaste?"
-              icon="create-outline"
-              value={nombre}
-              onChangeText={setNombre}
-              placeholder="Ej. Empuje · Pecho y tríceps"
-            />
-            <Field
-              label="Duración (minutos)"
-              icon="time-outline"
-              value={duracion}
-              onChangeText={(t) => setDuracion(t.replace(/[^0-9]/g, ''))}
-              placeholder="45"
-              keyboardType="number-pad"
-            />
-          </View>
+      <FormularioConTeclado contentContainerStyle={styles.scroll}>
+        <View style={styles.encabezado}>
+          <Field
+            label="¿Qué entrenaste?"
+            icon="create-outline"
+            value={nombre}
+            onChangeText={setNombre}
+            placeholder="Ej. Empuje · Pecho y tríceps"
+          />
+          <Field
+            label="Duración (minutos)"
+            icon="time-outline"
+            value={duracion}
+            onChangeText={(t) => setDuracion(t.replace(/[^0-9]/g, ''))}
+            placeholder="45"
+            keyboardType="number-pad"
+          />
+        </View>
 
-          {ejercicios.length === 0 ? (
-            <Reveal index={0}>
-              <Card style={styles.vacio}>
-                <IconCircle name="barbell-outline" tone="muted" size={52} />
-                <Text style={[styles.vacioTitulo, { color: colors.text }]}>Agrega tu primer ejercicio</Text>
-                <Text style={[styles.vacioTexto, { color: colors.textSecondary }]}>
-                  {tieneGym
-                    ? 'Elige entre las máquinas de tu gimnasio o del catálogo libre.'
-                    : 'Elige del catálogo libre: no necesitas estar en un gimnasio.'}
-                </Text>
+        {ejercicios.length === 0 ? (
+          <Reveal index={0}>
+            <Card style={styles.vacio}>
+              <IconCircle name="barbell-outline" tone="muted" size={52} />
+              <Text style={[styles.vacioTitulo, { color: colors.text }]}>Agrega tu primer ejercicio</Text>
+              <Text style={[styles.vacioTexto, { color: colors.textSecondary }]}>
+                {tieneGym
+                  ? 'Elige entre las máquinas de tu gimnasio o del catálogo libre.'
+                  : 'Elige del catálogo libre: no necesitas estar en un gimnasio.'}
+              </Text>
+            </Card>
+          </Reveal>
+        ) : (
+          ejercicios.map((ejercicio, i) => (
+            <Reveal index={i} key={`${ejercicio.nombre}-${i}`}>
+              <Card style={styles.ejercicioCard}>
+                <View style={styles.ejercicioTop}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.ejercicioNombre, { color: colors.text }]}>{ejercicio.nombre}</Text>
+                    <Text style={[styles.ejercicioMeta, { color: colors.textSecondary }]}>
+                      {ejercicio.machineNombre ? `${ejercicio.machineNombre} · ` : ''}
+                      {ejercicio.musculo || 'Sin grupo'}
+                    </Text>
+                  </View>
+                  <AnimatedPressable onPress={() => quitarEjercicio(i)} hitSlop={10} scaleTo={0.85}>
+                    <Ionicons name="trash-outline" size={19} color={brand.danger} />
+                  </AnimatedPressable>
+                </View>
+
+                <View style={[styles.tablaEncabezado, { borderBottomColor: colors.border }]}>
+                  <Text style={[styles.colSerie, styles.encabezadoTexto, { color: colors.textSecondary }]}>SERIE</Text>
+                  <Text style={[styles.colCampo, styles.encabezadoTexto, { color: colors.textSecondary }]}>REPS</Text>
+                  <Text style={[styles.colCampo, styles.encabezadoTexto, { color: colors.textSecondary }]}>KG</Text>
+                  <View style={styles.colAcciones} />
+                </View>
+
+                {ejercicio.series.map((serie, j) => (
+                  <View key={j} style={styles.filaSerie}>
+                    <Text style={[styles.colSerie, styles.numeroSerie, { color: colors.textSecondary }]}>
+                      {j + 1}
+                    </Text>
+                    <TextInput
+                      style={[styles.colCampo, styles.input, { color: colors.text, backgroundColor: colors.background, borderColor: colors.border }]}
+                      value={serie.repeticiones?.toString() ?? ''}
+                      onChangeText={(t) => actualizarSerie(i, j, 'repeticiones', t.replace(/[^0-9]/g, ''))}
+                      keyboardType="number-pad"
+                      placeholder="-"
+                      placeholderTextColor={colors.textSecondary}
+                    />
+                    <TextInput
+                      style={[styles.colCampo, styles.input, { color: colors.text, backgroundColor: colors.background, borderColor: colors.border }]}
+                      value={serie.peso?.toString() ?? ''}
+                      onChangeText={(t) => actualizarSerie(i, j, 'peso', t.replace(/[^0-9.,]/g, ''))}
+                      keyboardType="decimal-pad"
+                      placeholder="-"
+                      placeholderTextColor={colors.textSecondary}
+                    />
+                    <View style={styles.colAcciones}>
+                      <AnimatedPressable onPress={() => alternarSerie(i, j)} hitSlop={8} scaleTo={0.85}>
+                        <Ionicons
+                          name={serie.completada ? 'checkmark-circle' : 'ellipse-outline'}
+                          size={24}
+                          color={serie.completada ? brand.success : colors.textSecondary}
+                        />
+                      </AnimatedPressable>
+                      <AnimatedPressable onPress={() => quitarSerie(i, j)} hitSlop={8} scaleTo={0.85} haptic={false}>
+                        <Ionicons name="close" size={18} color={colors.textSecondary} />
+                      </AnimatedPressable>
+                    </View>
+                  </View>
+                ))}
+
+                <AnimatedPressable onPress={() => agregarSerie(i)} scaleTo={0.97} style={styles.agregarSerie}>
+                  <Ionicons name="add" size={16} color={colors.tint} />
+                  <Text style={[styles.agregarSerieTexto, { color: colors.tint }]}>Agregar serie</Text>
+                </AnimatedPressable>
               </Card>
             </Reveal>
-          ) : (
-            ejercicios.map((ejercicio, i) => (
-              <Reveal index={i} key={`${ejercicio.nombre}-${i}`}>
-                <Card style={styles.ejercicioCard}>
-                  <View style={styles.ejercicioTop}>
-                    <View style={{ flex: 1 }}>
-                      <Text style={[styles.ejercicioNombre, { color: colors.text }]}>{ejercicio.nombre}</Text>
-                      <Text style={[styles.ejercicioMeta, { color: colors.textSecondary }]}>
-                        {ejercicio.machineNombre ? `${ejercicio.machineNombre} · ` : ''}
-                        {ejercicio.musculo || 'Sin grupo'}
-                      </Text>
-                    </View>
-                    <AnimatedPressable onPress={() => quitarEjercicio(i)} hitSlop={10} scaleTo={0.85}>
-                      <Ionicons name="trash-outline" size={19} color={brand.danger} />
-                    </AnimatedPressable>
-                  </View>
+          ))
+        )}
 
-                  <View style={[styles.tablaEncabezado, { borderBottomColor: colors.border }]}>
-                    <Text style={[styles.colSerie, styles.encabezadoTexto, { color: colors.textSecondary }]}>SERIE</Text>
-                    <Text style={[styles.colCampo, styles.encabezadoTexto, { color: colors.textSecondary }]}>REPS</Text>
-                    <Text style={[styles.colCampo, styles.encabezadoTexto, { color: colors.textSecondary }]}>KG</Text>
-                    <View style={styles.colAcciones} />
-                  </View>
+        <PrimaryButton
+          label="Agregar ejercicio"
+          icon="add-circle-outline"
+          variant="outline"
+          onPress={() => setPickerAbierto(true)}
+        />
 
-                  {ejercicio.series.map((serie, j) => (
-                    <View key={j} style={styles.filaSerie}>
-                      <Text style={[styles.colSerie, styles.numeroSerie, { color: colors.textSecondary }]}>
-                        {j + 1}
-                      </Text>
-                      <TextInput
-                        style={[styles.colCampo, styles.input, { color: colors.text, backgroundColor: colors.background, borderColor: colors.border }]}
-                        value={serie.repeticiones?.toString() ?? ''}
-                        onChangeText={(t) => actualizarSerie(i, j, 'repeticiones', t.replace(/[^0-9]/g, ''))}
-                        keyboardType="number-pad"
-                        placeholder="-"
-                        placeholderTextColor={colors.textSecondary}
-                      />
-                      <TextInput
-                        style={[styles.colCampo, styles.input, { color: colors.text, backgroundColor: colors.background, borderColor: colors.border }]}
-                        value={serie.peso?.toString() ?? ''}
-                        onChangeText={(t) => actualizarSerie(i, j, 'peso', t.replace(/[^0-9.,]/g, ''))}
-                        keyboardType="decimal-pad"
-                        placeholder="-"
-                        placeholderTextColor={colors.textSecondary}
-                      />
-                      <View style={styles.colAcciones}>
-                        <AnimatedPressable onPress={() => alternarSerie(i, j)} hitSlop={8} scaleTo={0.85}>
-                          <Ionicons
-                            name={serie.completada ? 'checkmark-circle' : 'ellipse-outline'}
-                            size={24}
-                            color={serie.completada ? brand.success : colors.textSecondary}
-                          />
-                        </AnimatedPressable>
-                        <AnimatedPressable onPress={() => quitarSerie(i, j)} hitSlop={8} scaleTo={0.85} haptic={false}>
-                          <Ionicons name="close" size={18} color={colors.textSecondary} />
-                        </AnimatedPressable>
-                      </View>
-                    </View>
-                  ))}
-
-                  <AnimatedPressable onPress={() => agregarSerie(i)} scaleTo={0.97} style={styles.agregarSerie}>
-                    <Ionicons name="add" size={16} color={colors.tint} />
-                    <Text style={[styles.agregarSerieTexto, { color: colors.tint }]}>Agregar serie</Text>
-                  </AnimatedPressable>
-                </Card>
-              </Reveal>
-            ))
-          )}
-
-          <PrimaryButton
-            label="Agregar ejercicio"
-            icon="add-circle-outline"
-            variant="outline"
-            onPress={() => setPickerAbierto(true)}
-          />
-
-          {ejercicios.length > 0 ? (
-            <View style={[styles.resumen, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-              <View style={styles.resumenItem}>
-                <Text style={[styles.resumenValor, { color: colors.text }]}>{ejercicios.length}</Text>
-                <Text style={[styles.resumenEtiqueta, { color: colors.textSecondary }]}>ejercicios</Text>
-              </View>
-              <View style={styles.resumenItem}>
-                <Text style={[styles.resumenValor, { color: colors.text }]}>
-                  {ejercicios.reduce((n, e) => n + e.series.length, 0)}
-                </Text>
-                <Text style={[styles.resumenEtiqueta, { color: colors.textSecondary }]}>series</Text>
-              </View>
-              <View style={styles.resumenItem}>
-                <Text style={[styles.resumenValor, { color: colors.text }]}>
-                  {Math.round(volumen).toLocaleString('es-MX')}
-                </Text>
-                <Text style={[styles.resumenEtiqueta, { color: colors.textSecondary }]}>kg movidos</Text>
-              </View>
+        {ejercicios.length > 0 ? (
+          <View style={[styles.resumen, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <View style={styles.resumenItem}>
+              <Text style={[styles.resumenValor, { color: colors.text }]}>{ejercicios.length}</Text>
+              <Text style={[styles.resumenEtiqueta, { color: colors.textSecondary }]}>ejercicios</Text>
             </View>
-          ) : null}
+            <View style={styles.resumenItem}>
+              <Text style={[styles.resumenValor, { color: colors.text }]}>
+                {ejercicios.reduce((n, e) => n + e.series.length, 0)}
+              </Text>
+              <Text style={[styles.resumenEtiqueta, { color: colors.textSecondary }]}>series</Text>
+            </View>
+            <View style={styles.resumenItem}>
+              <Text style={[styles.resumenValor, { color: colors.text }]}>
+                {Math.round(volumen).toLocaleString('es-MX')}
+              </Text>
+              <Text style={[styles.resumenEtiqueta, { color: colors.textSecondary }]}>kg movidos</Text>
+            </View>
+          </View>
+        ) : null}
 
-          {error ? <ErrorBox message={error} /> : null}
+        {error ? <ErrorBox message={error} /> : null}
 
-          <PrimaryButton
-            label="Guardar entrenamiento"
-            icon="checkmark-circle-outline"
-            onPress={guardar}
-            loading={guardando}
-            disabled={ejercicios.length === 0}
-          />
-        </ScrollView>
-      </KeyboardAvoidingView>
+        <PrimaryButton
+          label="Guardar entrenamiento"
+          icon="checkmark-circle-outline"
+          onPress={guardar}
+          loading={guardando}
+          disabled={ejercicios.length === 0}
+        />
+      </FormularioConTeclado>
 
       <ExercisePicker
         visible={pickerAbierto}
