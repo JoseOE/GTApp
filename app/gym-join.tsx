@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -14,6 +14,7 @@ import { FontFamily, Spacing } from '@/constants/Theme';
 import { ApiError, joinGym, lookupGym } from '@/lib/api';
 import { useAccount } from '@/lib/AccountContext';
 import { getSession } from '@/lib/session';
+import { FormularioConTeclado } from '@/components/ui/FormularioConTeclado';
 
 type Preview = { id: string; nombre: string; direccion: string };
 
@@ -66,76 +67,74 @@ export default function GymJoinScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['bottom']}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
-        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-          <Reveal index={0} style={styles.header}>
-            <IconCircle name="key" tone="brand" size={56} />
-            <Text style={[styles.title, { color: colors.text }]}>Vincula tu gimnasio</Text>
-            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-              Pide el código de acceso en recepción. Al enviarlo, tu gimnasio recibe tu solicitud y la aprueba.
-            </Text>
-          </Reveal>
+      <FormularioConTeclado contentContainerStyle={styles.scroll}>
+        <Reveal index={0} style={styles.header}>
+          <IconCircle name="key" tone="brand" size={56} />
+          <Text style={[styles.title, { color: colors.text }]}>Vincula tu gimnasio</Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+            Pide el código de acceso en recepción. Al enviarlo, tu gimnasio recibe tu solicitud y la aprueba.
+          </Text>
+        </Reveal>
 
-          <Reveal index={1} style={styles.form}>
-            <Field
-              label="Código de acceso"
-              icon="keypad-outline"
-              value={codigo}
-              onChangeText={(text) => {
-                setCodigo(text.toUpperCase());
-                setPreview(null);
-              }}
-              placeholder="PWR4-K7M2"
-              autoCapitalize="characters"
-              autoCorrect={false}
-              maxLength={9}
-              hint="No importa si lo escribes en minúsculas o sin el guion."
-            />
+        <Reveal index={1} style={styles.form}>
+          <Field
+            label="Código de acceso"
+            icon="keypad-outline"
+            value={codigo}
+            onChangeText={(text) => {
+              setCodigo(text.toUpperCase());
+              setPreview(null);
+            }}
+            placeholder="PWR4-K7M2"
+            autoCapitalize="characters"
+            autoCorrect={false}
+            maxLength={9}
+            hint="No importa si lo escribes en minúsculas o sin el guion."
+          />
 
-            {error ? <ErrorBox message={error} /> : null}
+          {error ? <ErrorBox message={error} /> : null}
 
-            {preview ? (
-              <Card style={styles.previewCard}>
-                <View style={styles.previewRow}>
-                  <IconCircle name="business" tone="success" size={44} />
-                  <View style={{ flex: 1 }}>
-                    <Text style={[styles.previewName, { color: colors.text }]}>{preview.nombre}</Text>
-                    {preview.direccion ? (
-                      <Text style={[styles.previewMeta, { color: colors.textSecondary }]}>
-                        {preview.direccion}
-                      </Text>
-                    ) : null}
-                  </View>
+          {preview ? (
+            <Card style={styles.previewCard}>
+              <View style={styles.previewRow}>
+                <IconCircle name="business" tone="success" size={44} />
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.previewName, { color: colors.text }]}>{preview.nombre}</Text>
+                  {preview.direccion ? (
+                    <Text style={[styles.previewMeta, { color: colors.textSecondary }]}>
+                      {preview.direccion}
+                    </Text>
+                  ) : null}
                 </View>
-                <Text style={[styles.previewConfirm, { color: colors.textSecondary }]}>
-                  ¿Es tu gimnasio? Al continuar le llegará tu solicitud para aprobarla.
-                </Text>
-                <PrimaryButton
-                  label="Enviar solicitud"
-                  icon="paper-plane-outline"
-                  onPress={handleUnirse}
-                  loading={loading}
-                />
-              </Card>
-            ) : (
+              </View>
+              <Text style={[styles.previewConfirm, { color: colors.textSecondary }]}>
+                ¿Es tu gimnasio? Al continuar le llegará tu solicitud para aprobarla.
+              </Text>
               <PrimaryButton
-                label="Buscar gimnasio"
-                icon="search-outline"
-                onPress={handleBuscar}
+                label="Enviar solicitud"
+                icon="paper-plane-outline"
+                onPress={handleUnirse}
                 loading={loading}
               />
-            )}
+            </Card>
+          ) : (
+            <PrimaryButton
+              label="Buscar gimnasio"
+              icon="search-outline"
+              onPress={handleBuscar}
+              loading={loading}
+            />
+          )}
 
-            <View style={[styles.noteBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-              <Ionicons name="shield-checkmark-outline" size={18} color={brand.primary} />
-              <Text style={[styles.noteText, { color: colors.textSecondary }]}>
-                Mientras tanto puedes seguir usando la app con normalidad: tus rutinas, tus entrenamientos y tu
-                progreso no dependen de ningún gimnasio.
-              </Text>
-            </View>
-          </Reveal>
-        </ScrollView>
-      </KeyboardAvoidingView>
+          <View style={[styles.noteBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Ionicons name="shield-checkmark-outline" size={18} color={brand.primary} />
+            <Text style={[styles.noteText, { color: colors.textSecondary }]}>
+              Mientras tanto puedes seguir usando la app con normalidad: tus rutinas, tus entrenamientos y tu
+              progreso no dependen de ningún gimnasio.
+            </Text>
+          </View>
+        </Reveal>
+      </FormularioConTeclado>
     </SafeAreaView>
   );
 }

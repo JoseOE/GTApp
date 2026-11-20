@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as WebBrowser from 'expo-web-browser';
@@ -25,6 +25,7 @@ import { ApiError } from '@/lib/api';
 import { useAccount } from '@/lib/AccountContext';
 import { useCarrito } from '@/lib/CarritoContext';
 import { dinero } from '@/lib/formato';
+import { FormularioConTeclado } from '@/components/ui/FormularioConTeclado';
 import {
   fetchVendedor,
   pagarCarrito,
@@ -203,94 +204,92 @@ export default function CheckoutScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['bottom']}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
-        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-          {carrito.avisos.length ? <Avisos avisos={carrito.avisos} /> : null}
+      <FormularioConTeclado contentContainerStyle={styles.scroll}>
+        {carrito.avisos.length ? <Avisos avisos={carrito.avisos} /> : null}
 
-          <Text style={[styles.seccion, { color: colors.text }]}>Tu pedido</Text>
-          <Card style={{ gap: Spacing.xs }}>
-            {carrito.items.map((i) => (
-              <View key={i.id} style={styles.partida}>
-                <Text style={[styles.partidaTexto, { color: colors.text }]} numberOfLines={1}>
-                  {i.cantidad} × {i.titulo}
-                </Text>
-                <Text style={[styles.partidaTexto, { color: colors.text }]}>{dinero(i.total)}</Text>
-              </View>
-            ))}
-          </Card>
-          <Desglose carrito={carrito} />
-
-          <Text style={[styles.seccion, { color: colors.text }]}>Forma de pago</Text>
-          <View style={{ gap: Spacing.sm }}>
-            {METODOS.map((m) => {
-              const activo = metodo === m.id;
-              return (
-                <AnimatedPressable
-                  key={m.id}
-                  onPress={() => {
-                    setMetodo(m.id);
-                    setError(null);
-                  }}
-                  haptic={false}
-                  scaleTo={0.98}
-                  style={[
-                    styles.metodo,
-                    { backgroundColor: colors.surface, borderColor: activo ? brand.primary : colors.border },
-                  ]}>
-                  <View style={styles.metodoCabeza}>
-                    <Ionicons
-                      name={activo ? 'radio-button-on' : 'radio-button-off'}
-                      size={20}
-                      color={activo ? brand.primary : colors.textSecondary}
-                    />
-                    <View style={{ flex: 1, gap: 2 }}>
-                      <Text style={[styles.metodoTitulo, { color: colors.text }]}>{m.titulo}</Text>
-                      <Text style={[styles.meta, { color: colors.textSecondary }]}>{m.descripcion}</Text>
-                    </View>
-                  </View>
-                  <FilaLogos logos={m.logos} alto={22} />
-                </AnimatedPressable>
-              );
-            })}
-          </View>
-
-          {metodo === 'stripe' ? (
-            <Card>
-              <MetodoTarjeta />
-            </Card>
-          ) : null}
-
-          {esRenovacion && metodo === 'paynet' ? (
-            <View style={[styles.notaRenovacion, { backgroundColor: brand.warning + '14', borderColor: brand.warning + '55' }]}>
-              <Ionicons name="time-outline" size={18} color={brand.warning} />
-              <Text style={[styles.partidaTexto, { color: colors.text, flex: 1 }]}>
-                Con efectivo en tienda la puerta no se abre en el momento: tu membresía se renueva cuando pagues la ficha. Después pasa tu tarjeta.
+        <Text style={[styles.seccion, { color: colors.text }]}>Tu pedido</Text>
+        <Card style={{ gap: Spacing.xs }}>
+          {carrito.items.map((i) => (
+            <View key={i.id} style={styles.partida}>
+              <Text style={[styles.partidaTexto, { color: colors.text }]} numberOfLines={1}>
+                {i.cantidad} × {i.titulo}
               </Text>
+              <Text style={[styles.partidaTexto, { color: colors.text }]}>{dinero(i.total)}</Text>
             </View>
-          ) : null}
+          ))}
+        </Card>
+        <Desglose carrito={carrito} />
 
-          {metodo === 'paypal' ? (
-            <Card>
-              <MetodoPaypal simular={simularPaypal} onSimular={setSimularPaypal} />
-            </Card>
-          ) : null}
+        <Text style={[styles.seccion, { color: colors.text }]}>Forma de pago</Text>
+        <View style={{ gap: Spacing.sm }}>
+          {METODOS.map((m) => {
+            const activo = metodo === m.id;
+            return (
+              <AnimatedPressable
+                key={m.id}
+                onPress={() => {
+                  setMetodo(m.id);
+                  setError(null);
+                }}
+                haptic={false}
+                scaleTo={0.98}
+                style={[
+                  styles.metodo,
+                  { backgroundColor: colors.surface, borderColor: activo ? brand.primary : colors.border },
+                ]}>
+                <View style={styles.metodoCabeza}>
+                  <Ionicons
+                    name={activo ? 'radio-button-on' : 'radio-button-off'}
+                    size={20}
+                    color={activo ? brand.primary : colors.textSecondary}
+                  />
+                  <View style={{ flex: 1, gap: 2 }}>
+                    <Text style={[styles.metodoTitulo, { color: colors.text }]}>{m.titulo}</Text>
+                    <Text style={[styles.meta, { color: colors.textSecondary }]}>{m.descripcion}</Text>
+                  </View>
+                </View>
+                <FilaLogos logos={m.logos} alto={22} />
+              </AnimatedPressable>
+            );
+          })}
+        </View>
 
-          {error ? <ErrorBox message={error} /> : null}
+        {metodo === 'stripe' ? (
+          <Card>
+            <MetodoTarjeta />
+          </Card>
+        ) : null}
 
-          <PrimaryButton label={`Pagar ${dinero(total)}`} icon="lock-closed" onPress={iniciarPago} loading={procesando} />
-          <Text style={[styles.nota, { color: colors.textSecondary }]}>
-            Al confirmar tu compra aceptas los{' '}
-            <Text style={[styles.enlace, { color: brand.primaryDark }]} onPress={() => WebBrowser.openBrowserAsync(urlTerminos(gymId))}>
-              Términos y condiciones de compra
-            </Text>{' '}
-            y el{' '}
-            <Text style={[styles.enlace, { color: brand.primaryDark }]} onPress={() => WebBrowser.openBrowserAsync(urlPrivacidad(gymId))}>
-              Aviso de privacidad
-            </Text>{' '}
-            de {razon.replace(/\.$/, '')}. Pagos en modo de prueba (sandbox): no se cobra dinero real.
-          </Text>
-        </ScrollView>
-      </KeyboardAvoidingView>
+        {esRenovacion && metodo === 'paynet' ? (
+          <View style={[styles.notaRenovacion, { backgroundColor: brand.warning + '14', borderColor: brand.warning + '55' }]}>
+            <Ionicons name="time-outline" size={18} color={brand.warning} />
+            <Text style={[styles.partidaTexto, { color: colors.text, flex: 1 }]}>
+              Con efectivo en tienda la puerta no se abre en el momento: tu membresía se renueva cuando pagues la ficha. Después pasa tu tarjeta.
+            </Text>
+          </View>
+        ) : null}
+
+        {metodo === 'paypal' ? (
+          <Card>
+            <MetodoPaypal simular={simularPaypal} onSimular={setSimularPaypal} />
+          </Card>
+        ) : null}
+
+        {error ? <ErrorBox message={error} /> : null}
+
+        <PrimaryButton label={`Pagar ${dinero(total)}`} icon="lock-closed" onPress={iniciarPago} loading={procesando} />
+        <Text style={[styles.nota, { color: colors.textSecondary }]}>
+          Al confirmar tu compra aceptas los{' '}
+          <Text style={[styles.enlace, { color: brand.primaryDark }]} onPress={() => WebBrowser.openBrowserAsync(urlTerminos(gymId))}>
+            Términos y condiciones de compra
+          </Text>{' '}
+          y el{' '}
+          <Text style={[styles.enlace, { color: brand.primaryDark }]} onPress={() => WebBrowser.openBrowserAsync(urlPrivacidad(gymId))}>
+            Aviso de privacidad
+          </Text>{' '}
+          de {razon.replace(/\.$/, '')}. Pagos en modo de prueba (sandbox): no se cobra dinero real.
+        </Text>
+      </FormularioConTeclado>
 
       <ModalAdvertencia
         visible={paso === 'advertencia'}
