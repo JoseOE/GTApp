@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -13,6 +13,7 @@ import { FontFamily, Spacing } from '@/constants/Theme';
 import { ApiError, despertarServidor, loginRequest } from '@/lib/api';
 import { useAccount } from '@/lib/AccountContext';
 import { saveSession } from '@/lib/session';
+import { FormularioConTeclado } from '@/components/ui/FormularioConTeclado';
 
 export default function LoginScreen() {
   const { colors, brand } = useTheme();
@@ -65,74 +66,71 @@ export default function LoginScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
-        <ScrollView
-          contentContainerStyle={styles.scroll}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}>
-          <Reveal index={0} style={styles.header}>
-            <IconCircle name="barbell" tone="brand" size={64} />
-            <Text style={[styles.title, { color: colors.text }]}>
-              Gym<Text style={{ color: brand.primary }}>Track</Text>
+      <FormularioConTeclado
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}>
+        <Reveal index={0} style={styles.header}>
+          <IconCircle name="barbell" tone="brand" size={64} />
+          <Text style={[styles.title, { color: colors.text }]}>
+            Gym<Text style={{ color: brand.primary }}>Track</Text>
+          </Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+            Entrena, mide tu progreso y conecta con tu gimnasio
+          </Text>
+        </Reveal>
+
+        <Reveal index={1} style={styles.form}>
+          <Field
+            label="Correo electrónico"
+            icon="mail-outline"
+            value={email}
+            onChangeText={setEmail}
+            placeholder="ejemplo@correo.com"
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
+
+          <Field
+            label="Contraseña"
+            icon="lock-closed-outline"
+            value={password}
+            onChangeText={setPassword}
+            placeholder="Tu contraseña"
+            secureTextEntry={!showPassword}
+            rightIcon={showPassword ? 'eye-off-outline' : 'eye-outline'}
+            onRightIconPress={() => setShowPassword((v) => !v)}
+          />
+
+          <AnimatedPressable
+            onPress={() => router.push({ pathname: '/(auth)/recuperar', params: { email: email.trim() } })}
+            haptic={false}
+            scaleTo={0.97}
+            hitSlop={8}
+            style={styles.olvide}>
+            <Text style={[styles.olvideTexto, { color: brand.primary }]}>¿Olvidaste tu contraseña?</Text>
+          </AnimatedPressable>
+
+          {error ? <ErrorBox message={error} /> : null}
+
+          <PrimaryButton label="Entrar" icon="log-in-outline" onPress={handleLogin} loading={loading} />
+          {lento ? (
+            <Text style={[styles.helper, { color: colors.textSecondary }]}>
+              Despertando el servidor… la primera vez del día puede tardar hasta un minuto.
             </Text>
-            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-              Entrena, mide tu progreso y conecta con tu gimnasio
+          ) : null}
+
+          <AnimatedPressable
+            onPress={() => router.push('/(auth)/register')}
+            haptic={false}
+            scaleTo={0.97}
+            style={styles.linkRow}>
+            <Text style={[styles.helper, { color: colors.textSecondary }]}>
+              ¿No tienes cuenta?{' '}
+              <Text style={{ color: brand.primary, fontFamily: FontFamily.semiBold }}>Créala aquí</Text>
             </Text>
-          </Reveal>
-
-          <Reveal index={1} style={styles.form}>
-            <Field
-              label="Correo electrónico"
-              icon="mail-outline"
-              value={email}
-              onChangeText={setEmail}
-              placeholder="ejemplo@correo.com"
-              keyboardType="email-address"
-              autoCapitalize="none"
-            />
-
-            <Field
-              label="Contraseña"
-              icon="lock-closed-outline"
-              value={password}
-              onChangeText={setPassword}
-              placeholder="Tu contraseña"
-              secureTextEntry={!showPassword}
-              rightIcon={showPassword ? 'eye-off-outline' : 'eye-outline'}
-              onRightIconPress={() => setShowPassword((v) => !v)}
-            />
-
-            <AnimatedPressable
-              onPress={() => router.push({ pathname: '/(auth)/recuperar', params: { email: email.trim() } })}
-              haptic={false}
-              scaleTo={0.97}
-              hitSlop={8}
-              style={styles.olvide}>
-              <Text style={[styles.olvideTexto, { color: brand.primary }]}>¿Olvidaste tu contraseña?</Text>
-            </AnimatedPressable>
-
-            {error ? <ErrorBox message={error} /> : null}
-
-            <PrimaryButton label="Entrar" icon="log-in-outline" onPress={handleLogin} loading={loading} />
-            {lento ? (
-              <Text style={[styles.helper, { color: colors.textSecondary }]}>
-                Despertando el servidor… la primera vez del día puede tardar hasta un minuto.
-              </Text>
-            ) : null}
-
-            <AnimatedPressable
-              onPress={() => router.push('/(auth)/register')}
-              haptic={false}
-              scaleTo={0.97}
-              style={styles.linkRow}>
-              <Text style={[styles.helper, { color: colors.textSecondary }]}>
-                ¿No tienes cuenta?{' '}
-                <Text style={{ color: brand.primary, fontFamily: FontFamily.semiBold }}>Créala aquí</Text>
-              </Text>
-            </AnimatedPressable>
-          </Reveal>
-        </ScrollView>
-      </KeyboardAvoidingView>
+          </AnimatedPressable>
+        </Reveal>
+      </FormularioConTeclado>
     </SafeAreaView>
   );
 }
