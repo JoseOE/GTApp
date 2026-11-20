@@ -3,6 +3,7 @@ import { View } from 'react-native';
 import { router, Stack, usePathname } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
+import { KeyboardProvider } from 'react-native-keyboard-controller';
 import {
   useFonts,
   Poppins_400Regular,
@@ -50,12 +51,15 @@ export default function RootLayout() {
     return null;
   }
 
+  // KeyboardProvider: los formularios siguen al teclado al abrirse y cerrarse.
   return (
-    <AccountProvider>
-      <CarritoProvider>
-        <RootNavigator />
-      </CarritoProvider>
-    </AccountProvider>
+    <KeyboardProvider>
+      <AccountProvider>
+        <CarritoProvider>
+          <RootNavigator />
+        </CarritoProvider>
+      </AccountProvider>
+    </KeyboardProvider>
   );
 }
 
