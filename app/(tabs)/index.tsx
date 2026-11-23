@@ -300,7 +300,14 @@ function EntrenarHoy({ account }: { account: Account }) {
             : 'Anota tus series, repeticiones y peso.'}
         </Text>
         <View style={{ marginTop: Spacing.md }}>
-          <PrimaryButton label="Empezar entrenamiento" icon="play" onPress={() => router.push('/workout-log')} />
+          {/* Con rutina de hoy, se abre para revisarla y empezar; sin ella, registro libre. */}
+          <PrimaryButton
+            label="Empezar entrenamiento"
+            icon="play"
+            onPress={() =>
+              rutina ? router.push({ pathname: '/rutina/[id]', params: { id: rutina.id } }) : router.push('/workout-log')
+            }
+          />
         </View>
         <AnimatedPressable onPress={() => router.push('/(tabs)/routines')} style={styles.hoyEnlace} hitSlop={8}>
           <Text style={[Type.callout, styles.hoyEnlaceTexto]}>
