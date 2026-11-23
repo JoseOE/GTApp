@@ -171,6 +171,7 @@ export type WorkoutSession = {
   fecha: string;
   duracionMinutos?: number | null;
   notas?: string | null;
+  rutinaId?: string | null;
   ejercicios: LoggedExercise[];
 };
 
@@ -204,6 +205,17 @@ export type Account = {
   gym: Gym | null;
 };
 
+export type RoutineItem = {
+  machineId?: string | null;
+  exerciseId?: string | null;
+  machineNombre?: string | null;
+  nombre: string;
+  musculo: string;
+  series?: number | null;
+  repeticiones?: string | null;
+  descansoSegundos?: number | null;
+};
+
 export type Routine = {
   id: string;
   gymId: string;
@@ -212,6 +224,9 @@ export type Routine = {
   descripcion: string;
   duracion: string;
   ejercicios: string[];
+  // Ejercicios elegidos de las máquinas, con músculo y descanso. Las rutinas
+  // anteriores solo traen el texto de "ejercicios".
+  items?: RoutineItem[];
   dia?: string;
   coach?: string;
   nivel?: string;
@@ -309,7 +324,13 @@ export function fetchWorkoutStats(userId: string) {
 
 export function saveWorkout(
   userId: string,
-  workout: { nombre: string; duracionMinutos?: number; notas?: string; ejercicios: LoggedExercise[] }
+  workout: {
+    nombre: string;
+    duracionMinutos?: number;
+    notas?: string;
+    rutinaId?: string | null;
+    ejercicios: LoggedExercise[];
+  }
 ) {
   return request<WorkoutSession>(`/api/users/${userId}/workouts`, {
     method: 'POST',
