@@ -14,6 +14,7 @@ import { Reveal } from '@/components/ui/Reveal';
 import { StateCard } from '@/components/ui/StateCard';
 import { AnimatedPressable } from '@/components/ui/AnimatedPressable';
 import { SelectorReemplazo } from '@/components/entrenamiento/SelectorReemplazo';
+import { FotosEjercicio } from '@/components/entrenamiento/FotosEjercicio';
 import { Radius, Spacing, Type } from '@/constants/Theme';
 import { STARTER_ROUTINES } from '@/constants/StarterRoutines';
 import { fetchMyMachines, fetchMyRoutines, fetchWorkouts, type Machine } from '@/lib/api';
@@ -195,7 +196,7 @@ export default function RutinaScreen() {
                     La vez anterior: {anteriores[claveEjercicio(e.nombre)].map(textoSerie).join(' · ')}
                   </Text>
                 ) : null}
-                {e.instrucciones ? (
+                {e.instrucciones || e.imagenes?.length ? (
                   <AnimatedPressable
                     onPress={() => setAbierto((a) => (a === e.clave ? null : e.clave))}
                     hitSlop={6}
@@ -208,8 +209,13 @@ export default function RutinaScreen() {
                     </Text>
                   </AnimatedPressable>
                 ) : null}
-                {e.instrucciones && abierto === e.clave ? (
-                  <Text style={[Type.footnote, { color: colors.text }]}>{e.instrucciones}</Text>
+                {abierto === e.clave ? (
+                  <>
+                    {e.instrucciones ? (
+                      <Text style={[Type.footnote, { color: colors.text }]}>{e.instrucciones}</Text>
+                    ) : null}
+                    <FotosEjercicio imagenes={e.imagenes} nombre={e.nombre} />
+                  </>
                 ) : null}
               </View>
               <AnimatedPressable

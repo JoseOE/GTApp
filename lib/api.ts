@@ -137,6 +137,8 @@ export type Exercise = {
   series?: number | null;
   repeticiones?: string;
   instrucciones?: string;
+  // Fotos de la posición inicial y la final (del catálogo de máquinas de la página).
+  imagenes?: string[] | null;
 };
 
 export type Machine = {
