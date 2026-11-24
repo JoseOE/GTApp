@@ -11,6 +11,7 @@ import { IconCircle } from '@/components/ui/IconCircle';
 import { StateCard } from '@/components/ui/StateCard';
 import { Reveal } from '@/components/ui/Reveal';
 import { AnimatedPressable } from '@/components/ui/AnimatedPressable';
+import { MiniaturaEjercicio } from '@/components/entrenamiento/FotosEjercicio';
 import { FontFamily, Spacing } from '@/constants/Theme';
 import { fetchMyMachines, type Machine } from '@/lib/api';
 
@@ -138,6 +139,7 @@ function MachineCard({ machine, index }: { machine: Machine; index: number }) {
           <View style={[styles.lista, { borderTopColor: colors.border }]}>
             {ejercicios.map((e) => (
               <View key={e.id} style={styles.ejercicio}>
+                <MiniaturaEjercicio imagenes={e.imagenes} nombre={e.nombre} />
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.ejercicioNombre, { color: colors.text }]}>{e.nombre}</Text>
                   {e.instrucciones ? (
@@ -173,7 +175,7 @@ const styles = StyleSheet.create({
   meta: { fontSize: 12.5, marginTop: 2 },
   descripcion: { fontSize: 12.5, marginTop: Spacing.sm, lineHeight: 17 },
   lista: { borderTopWidth: 1, marginTop: Spacing.md, paddingTop: Spacing.sm, gap: Spacing.md },
-  ejercicio: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.sm },
+  ejercicio: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.md },
   ejercicioNombre: { fontFamily: FontFamily.medium, fontSize: 14 },
   instrucciones: { fontSize: 12, marginTop: 2, lineHeight: 16 },
   ejercicioMeta: { alignItems: 'flex-end', gap: 4 },

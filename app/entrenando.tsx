@@ -17,6 +17,7 @@ import { AnimatedPressable } from '@/components/ui/AnimatedPressable';
 import { FormularioConTeclado } from '@/components/ui/FormularioConTeclado';
 import { Contador, useAhora } from '@/components/entrenamiento/Contador';
 import { SelectorReemplazo } from '@/components/entrenamiento/SelectorReemplazo';
+import { FotosEjercicio } from '@/components/entrenamiento/FotosEjercicio';
 import { FontFamily, Radius, Spacing, Type } from '@/constants/Theme';
 import { ApiError, fetchMyMachines, type Machine } from '@/lib/api';
 import {
@@ -282,7 +283,7 @@ export default function EntrenandoScreen() {
                       </Text>
                     ) : null}
                   </View>
-                  {ej.instrucciones ? (
+                  {ej.instrucciones || ej.imagenes?.length ? (
                     <AnimatedPressable
                       onPress={() => setAbiertas((a) => ({ ...a, [e]: !a[e] }))}
                       hitSlop={8}
@@ -303,12 +304,15 @@ export default function EntrenandoScreen() {
                   </AnimatedPressable>
                 </View>
 
-                {ej.instrucciones && abiertas[e] ? (
+                {(ej.instrucciones || ej.imagenes?.length) && abiertas[e] ? (
                   <Animated.View
                     entering={reducir ? undefined : FadeIn.duration(160)}
                     style={[styles.instrucciones, { backgroundColor: colors.background }]}>
                     <Text style={[Type.caption, { color: colors.textSecondary }]}>CÓMO SE HACE</Text>
-                    <Text style={[Type.footnote, { color: colors.text }]}>{ej.instrucciones}</Text>
+                    {ej.instrucciones ? (
+                      <Text style={[Type.footnote, { color: colors.text }]}>{ej.instrucciones}</Text>
+                    ) : null}
+                    <FotosEjercicio imagenes={ej.imagenes} nombre={ej.nombre} />
                   </Animated.View>
                 ) : null}
 
