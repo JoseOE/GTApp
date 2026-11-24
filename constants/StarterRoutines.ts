@@ -24,7 +24,7 @@ export const EJERCICIOS_LIBRES: { nombre: string; musculo: string; instrucciones
   },
   {
     nombre: 'Lagartijas diamante',
-    musculo: 'Brazo',
+    musculo: 'Tríceps',
     instrucciones: 'Junta las manos bajo el pecho formando un rombo con los dedos. Baja con los codos pegados al cuerpo y empuja.',
   },
   {
@@ -54,7 +54,7 @@ export const EJERCICIOS_LIBRES: { nombre: string; musculo: string; instrucciones
   },
   {
     nombre: 'Puente de glúteo',
-    musculo: 'Pierna',
+    musculo: 'Glúteo',
     instrucciones: 'Boca arriba con las rodillas dobladas. Sube la cadera apretando los glúteos hasta alinear rodillas, cadera y hombros.',
   },
   {
@@ -64,12 +64,12 @@ export const EJERCICIOS_LIBRES: { nombre: string; musculo: string; instrucciones
   },
   {
     nombre: 'Fondos en paralelas',
-    musculo: 'Brazo',
+    musculo: 'Tríceps',
     instrucciones: 'Brazos estirados sobre las barras. Baja hasta que los codos formen 90° y empuja sin encoger los hombros.',
   },
   {
     nombre: 'Curl con mancuernas',
-    musculo: 'Brazo',
+    musculo: 'Bíceps',
     instrucciones: 'Codos pegados al cuerpo y palmas al frente. Sube las mancuernas hacia los hombros y baja lento.',
   },
   {
