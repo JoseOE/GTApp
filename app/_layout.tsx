@@ -18,6 +18,7 @@ import Colors from '@/constants/Colors';
 import { GymBrandContext } from '@/hooks/useTheme';
 import { AccountProvider, useAccount } from '@/lib/AccountContext';
 import { CarritoProvider } from '@/lib/CarritoContext';
+import { EntrenamientoProvider } from '@/lib/EntrenamientoContext';
 import { GymSplash } from '@/components/GymSplash';
 import { guardarMarca, leerMarca, marcaDe, type Marca } from '@/lib/marcaGuardada';
 import {
@@ -56,7 +57,9 @@ export default function RootLayout() {
     <KeyboardProvider>
       <AccountProvider>
         <CarritoProvider>
-          <RootNavigator />
+          <EntrenamientoProvider>
+            <RootNavigator />
+          </EntrenamientoProvider>
         </CarritoProvider>
       </AccountProvider>
     </KeyboardProvider>
@@ -130,6 +133,7 @@ function RootNavigator() {
     };
     alTocarNotificacion((datos) => {
       if (datos.tipo === 'anuncio') router.push('/anuncios');
+      if (datos.tipo === 'entrenamiento') router.push('/entrenando');
       if (datos.tipo === 'renovar_membresia') {
         setAvisoRenovar(null);
         router.push('/renovar-membresia');
@@ -210,6 +214,11 @@ function RootNavigator() {
               ...header,
             }}
           />
+
+          {/* Entrenar una rutina: ver y cambiar ejercicios, entrenar y el resumen */}
+          <Stack.Screen name="rutina/[id]" options={{ title: 'Rutina', ...header }} />
+          <Stack.Screen name="entrenando" options={{ title: 'Entrenando', ...header }} />
+          <Stack.Screen name="resumen-entrenamiento" options={{ title: 'Resumen', ...header }} />
 
           {/* Tienda del gimnasio */}
           <Stack.Screen name="producto/[id]" options={{ title: 'Producto', ...header }} />

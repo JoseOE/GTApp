@@ -148,6 +148,32 @@ export async function reprogramarRecordatorioDePago(account: Account | null) {
   });
 }
 
+// Aviso de fin del descanso entre series, para cuando no está la notificación
+// fija de Android (iPhone): suena aunque la app esté en segundo plano.
+const ID_FIN_DESCANSO = 'fin-descanso';
+
+export async function programarFinDescanso(hasta: number, texto: string) {
+  const Notifications = await cargar();
+  if (!Notifications) return;
+  await Notifications.cancelScheduledNotificationAsync(ID_FIN_DESCANSO).catch(() => {});
+  if (hasta <= Date.now() + 1000) return;
+  await Notifications.scheduleNotificationAsync({
+    identifier: ID_FIN_DESCANSO,
+    content: { title: '¡Se acabó el descanso!', body: texto, data: { tipo: 'entrenamiento' } },
+    trigger: {
+      type: Notifications.SchedulableTriggerInputTypes.DATE,
+      date: new Date(hasta),
+      channelId: CANAL_ANDROID,
+    },
+  }).catch(() => {});
+}
+
+export async function cancelarFinDescanso() {
+  const Notifications = await cargar();
+  if (!Notifications) return;
+  await Notifications.cancelScheduledNotificationAsync(ID_FIN_DESCANSO).catch(() => {});
+}
+
 export async function cancelarRecordatorios() {
   const Notifications = await cargar();
   if (!Notifications) return;

@@ -1,0 +1,8 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <application>
+    <!-- Recibe los botones de la notificación del entrenamiento y el fin del descanso. -->
+    <receiver
+      android:name="expo.modules.entrenamientovivo.VivoReceiver"
+      android:exported="false" />
+  </application>
+</manifest>

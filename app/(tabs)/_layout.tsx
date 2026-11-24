@@ -8,6 +8,7 @@ import { AnimatedTabIcon } from '@/components/ui/AnimatedTabIcon';
 import { useAccount } from '@/lib/AccountContext';
 import { temporalPospuesta } from '@/lib/contrasena';
 import { getSession } from '@/lib/session';
+import { BarraEntrenamiento } from '@/components/entrenamiento/BarraEntrenamiento';
 
 export default function TabLayout() {
   const { colors } = useTheme();
@@ -34,69 +35,73 @@ export default function TabLayout() {
   if (!ready) return <View style={{ flex: 1, backgroundColor: colors.background }} />;
 
   return (
-    <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: colors.tabIconSelected,
-        tabBarInactiveTintColor: colors.tabIconDefault,
-        tabBarStyle: {
-          backgroundColor: colors.tabBarBackground,
-          borderTopColor: colors.tabBarBorder,
-        },
-        tabBarLabelStyle: { fontFamily: FontFamily.medium, fontSize: 11.5 },
-        // Como en iOS: sin barra arriba. Cada pestaña lleva su título grande
-        // (TituloGrande) con el acceso a Mi cuenta, e Inicio su portada.
-        headerShown: false,
-      }}>
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Inicio',
-          tabBarIcon: ({ color, focused }) => (
-            <AnimatedTabIcon name={focused ? 'home' : 'home-outline'} color={color} focused={focused} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="routines"
-        options={{
-          title: 'Rutinas',
-          tabBarIcon: ({ color, focused }) => (
-            <AnimatedTabIcon name={focused ? 'list' : 'list-outline'} color={color} focused={focused} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="workout"
-        options={{
-          title: 'Entrenar',
-          tabBarIcon: ({ color, focused }) => (
-            <AnimatedTabIcon name={focused ? 'barbell' : 'barbell-outline'} color={color} focused={focused} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="progress"
-        options={{
-          title: 'Progreso',
-          tabBarIcon: ({ color, focused }) => (
-            <AnimatedTabIcon
-              name={focused ? 'stats-chart' : 'stats-chart-outline'}
-              color={color}
-              focused={focused}
-              size={22}
-            />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="tienda"
-        options={{
-          title: 'Tienda',
-          tabBarIcon: ({ color, focused }) => (
-            <AnimatedTabIcon name={focused ? 'bag-handle' : 'bag-handle-outline'} color={color} focused={focused} />
-          ),
-        }}
-      />
-    </Tabs>
+    <View style={{ flex: 1 }}>
+      <Tabs
+        screenOptions={{
+          tabBarActiveTintColor: colors.tabIconSelected,
+          tabBarInactiveTintColor: colors.tabIconDefault,
+          tabBarStyle: {
+            backgroundColor: colors.tabBarBackground,
+            borderTopColor: colors.tabBarBorder,
+          },
+          tabBarLabelStyle: { fontFamily: FontFamily.medium, fontSize: 11.5 },
+          // Como en iOS: sin barra arriba. Cada pestaña lleva su título grande
+          // (TituloGrande) con el acceso a Mi cuenta, e Inicio su portada.
+          headerShown: false,
+        }}>
+        <Tabs.Screen
+          name="index"
+          options={{
+            title: 'Inicio',
+            tabBarIcon: ({ color, focused }) => (
+              <AnimatedTabIcon name={focused ? 'home' : 'home-outline'} color={color} focused={focused} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="routines"
+          options={{
+            title: 'Rutinas',
+            tabBarIcon: ({ color, focused }) => (
+              <AnimatedTabIcon name={focused ? 'list' : 'list-outline'} color={color} focused={focused} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="workout"
+          options={{
+            title: 'Entrenar',
+            tabBarIcon: ({ color, focused }) => (
+              <AnimatedTabIcon name={focused ? 'barbell' : 'barbell-outline'} color={color} focused={focused} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="progress"
+          options={{
+            title: 'Progreso',
+            tabBarIcon: ({ color, focused }) => (
+              <AnimatedTabIcon
+                name={focused ? 'stats-chart' : 'stats-chart-outline'}
+                color={color}
+                focused={focused}
+                size={22}
+              />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="tienda"
+          options={{
+            title: 'Tienda',
+            tabBarIcon: ({ color, focused }) => (
+              <AnimatedTabIcon name={focused ? 'bag-handle' : 'bag-handle-outline'} color={color} focused={focused} />
+            ),
+          }}
+        />
+      </Tabs>
+      {/* Entrenamiento en curso: se puede volver a él desde cualquier pestaña. */}
+      <BarraEntrenamiento />
+    </View>
   );
 }

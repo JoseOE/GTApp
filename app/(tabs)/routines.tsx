@@ -67,7 +67,7 @@ export default function RoutinesScreen() {
     };
   }, [userId, hasAccess]);
 
-  const openWorkout = useCallback(() => router.push('/(tabs)/workout'), []);
+  const abrirRutina = useCallback((id: string) => router.push({ pathname: '/rutina/[id]', params: { id } }), []);
 
   if (accountLoading && !account) {
     return (
@@ -94,7 +94,7 @@ export default function RoutinesScreen() {
               HOY · {hoy.toUpperCase()}
             </Text>
             {rutinasDeHoy.map((r, i) => (
-              <GymRoutineCard key={r.id} routine={r} index={i} onPress={openWorkout} destacada />
+              <GymRoutineCard key={r.id} routine={r} index={i} onPress={() => abrirRutina(r.id)} destacada />
             ))}
           </>
         ) : null}
@@ -130,7 +130,7 @@ export default function RoutinesScreen() {
                       {cat.toUpperCase()}
                     </Text>
                     {grupos[cat].map((r, i) => (
-                      <GymRoutineCard key={r.id} routine={r} index={ci * 3 + i} onPress={openWorkout} />
+                      <GymRoutineCard key={r.id} routine={r} index={ci * 3 + i} onPress={() => abrirRutina(r.id)} />
                     ))}
                   </View>
                 ))
@@ -146,7 +146,7 @@ export default function RoutinesScreen() {
           Disponibles siempre, en casa o en cualquier gimnasio.
         </Text>
         {STARTER_ROUTINES.map((r, i) => (
-          <StarterRoutineCard key={r.id} routine={r} index={i} onPress={openWorkout} />
+          <StarterRoutineCard key={r.id} routine={r} index={i} onPress={() => abrirRutina(r.id)} />
         ))}
       </ScrollView>
     </SafeAreaView>
