@@ -1,4 +1,4 @@
-import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -11,6 +11,7 @@ import { FontFamily, Spacing } from '@/constants/Theme';
 import { useAccount, useAccountRefreshOnFocus } from '@/lib/AccountContext';
 import { cancelarRecordatorios } from '@/lib/notifications';
 import { puedeComprar } from '@/lib/CarritoContext';
+import { alerta } from '@/lib/dialogo';
 
 // Mi cuenta: quién eres, tu gimnasio y lo que se hace con la cuenta
 // (pedidos, contraseña, cerrar sesión).
@@ -19,7 +20,7 @@ export default function CuentaScreen() {
   const { account, signOut } = useAccount();
   useAccountRefreshOnFocus();
   function cerrarSesion() {
-    Alert.alert('Cerrar sesión', '¿Quieres salir de tu cuenta en este teléfono?', [
+    alerta('Cerrar sesión', '¿Quieres salir de tu cuenta en este teléfono?', [
       { text: 'Cancelar', style: 'cancel' },
       {
         text: 'Cerrar sesión',
@@ -32,7 +33,7 @@ export default function CuentaScreen() {
           router.replace('/(auth)/login');
         },
       },
-    ]);
+    ], { icono: 'log-out-outline', tono: 'peligro' });
   }
 
   return (

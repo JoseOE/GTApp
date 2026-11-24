@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { Alert, Image, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -16,6 +16,7 @@ import { useAccount } from '@/lib/AccountContext';
 import { useCarrito } from '@/lib/CarritoContext';
 import { dinero, urlImagen } from '@/lib/formato';
 import { vaciarCarrito, type PartidaCarrito } from '@/lib/tienda';
+import { alerta } from '@/lib/dialogo';
 
 export default function CarritoScreen() {
   const { colors, brand } = useTheme();
@@ -37,7 +38,7 @@ export default function CarritoScreen() {
     try {
       await accion();
     } catch (err) {
-      Alert.alert('No se pudo actualizar', err instanceof ApiError ? err.message : 'Inténtalo de nuevo.');
+      alerta('No se pudo actualizar', err instanceof ApiError ? err.message : 'Inténtalo de nuevo.');
       recargar();
     } finally {
       setOcupada(null);
@@ -45,7 +46,7 @@ export default function CarritoScreen() {
   }
 
   function confirmarVaciar() {
-    Alert.alert('Vaciar carrito', '¿Quitamos todos los productos?', [
+    alerta('Vaciar carrito', '¿Quitamos todos los productos?', [
       { text: 'Cancelar', style: 'cancel' },
       {
         text: 'Vaciar',
@@ -54,11 +55,11 @@ export default function CarritoScreen() {
           try {
             reemplazar(await vaciarCarrito());
           } catch (err) {
-            Alert.alert('No se pudo vaciar', err instanceof ApiError ? err.message : 'Inténtalo de nuevo.');
+            alerta('No se pudo vaciar', err instanceof ApiError ? err.message : 'Inténtalo de nuevo.');
           }
         },
       },
-    ]);
+    ], { icono: 'cart-outline', tono: 'peligro' });
   }
 
   async function refrescar() {

@@ -1,4 +1,4 @@
-import { Alert, StyleSheet, Text } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -10,6 +10,7 @@ import { AnimatedPressable } from '@/components/ui/AnimatedPressable';
 import { CambioConCodigo } from '@/components/cuenta/CambioConCodigo';
 import { FontFamily, Spacing } from '@/constants/Theme';
 import { FormularioConTeclado } from '@/components/ui/FormularioConTeclado';
+import { alerta } from '@/lib/dialogo';
 
 // ¿Olvidaste tu contraseña? Un código llega al correo y aquí mismo se escribe
 // junto con la contraseña nueva; después se entra con ella.
@@ -45,7 +46,7 @@ export default function RecuperarScreen() {
           <CambioConCodigo
             emailInicial={params.email ?? ''}
             onListo={(email, mensaje) => {
-              Alert.alert('Listo', `${mensaje} Ya puedes iniciar sesión.`);
+              alerta('Listo', `${mensaje} Ya puedes iniciar sesión.`);
               volverAlLogin(email);
             }}
           />

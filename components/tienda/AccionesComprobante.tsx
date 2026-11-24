@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ActivityIndicator, Alert, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { useTheme } from '@/hooks/useTheme';
@@ -16,6 +16,7 @@ import {
   verPdf,
 } from '@/lib/recibos';
 import type { Pedido } from '@/lib/tienda';
+import { alerta } from '@/lib/dialogo';
 
 type Accion = 'ver' | 'compartir' | 'whatsapp' | 'correo';
 
@@ -41,10 +42,10 @@ export function AccionesComprobante({ pedido }: { pedido: Pedido }) {
       if (accion === 'whatsapp') await compartirPorWhatsApp(pedido.orderId);
       if (accion === 'correo') {
         const r = await enviarPorCorreo(pedido.orderId);
-        Alert.alert(r.enviado ? 'Enviado' : 'No se envió', r.message);
+        alerta(r.enviado ? 'Enviado' : 'No se envió', r.message);
       }
     } catch (err) {
-      Alert.alert('No se pudo', err instanceof ApiError ? err.message : 'Inténtalo de nuevo.');
+      alerta('No se pudo', err instanceof ApiError ? err.message : 'Inténtalo de nuevo.');
     } finally {
       setOcupada(null);
     }
