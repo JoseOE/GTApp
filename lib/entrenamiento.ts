@@ -38,38 +38,101 @@ const sinAcentos = (t: string) =>
     .trim()
     .toLowerCase();
 
+// "Brazo" (como se capturaba antes) cuenta igual que Bíceps y Tríceps.
 export function mismoMusculo(a: string, b: string) {
-  return sinAcentos(a) === sinAcentos(b);
+  const x = sinAcentos(a);
+  const y = sinAcentos(b);
+  if (x === y) return true;
+  const brazo = ['brazo', 'biceps', 'triceps'];
+  return (x === 'brazo' && brazo.includes(y)) || (y === 'brazo' && brazo.includes(x));
 }
 
-// "Press banca plano — 4 x 10" → nombre, series y repeticiones.
+// Texto de una rutina → nombre, series y repeticiones. Acepta cómo lo escriben
+// los coaches:
+//   "Press banca plano — 4 x 10"   "Press banca 4x8"   "Curl 3 x 12-15"
+//   "Fondos 3 al fallo"            "Plancha 3x40 s"    "Caminadora — 20 min"
 export function leerEjercicioDeTexto(texto: string): { nombre: string; series: number | null; repeticiones: string } {
-  const m = /^(.*?)\s*[—–-]\s*(\d+)\s*[x×]\s*(.+)$/i.exec(texto.trim());
+  const t = texto.trim().replace(/\s+/g, ' ');
+  // Con raya o guion: "Nombre — 4 x 10" o "Nombre — 20 min".
+  let m = /^(.*?)\s+[—–-]\s+(\d+)\s*[x×]\s*(.+)$/i.exec(t);
   if (m) return { nombre: m[1].trim(), series: Number(m[2]), repeticiones: m[3].trim() };
-  const [nombre, ...resto] = texto.split(/\s*[—–]\s*/);
-  return { nombre: nombre.trim(), series: null, repeticiones: resto.join(' — ').trim() };
+  // Pegado al nombre: "Press banca 4x8", "Curl 3 x 12-15".
+  m = /^(.*?\D)\s*(\d+)\s*[x×]\s*(.+)$/i.exec(t);
+  if (m && m[1].trim()) return { nombre: limpiarNombre(m[1]), series: Number(m[2]), repeticiones: m[3].trim() };
+  // "Fondos 3 al fallo", "Dominadas 4 series al fallo".
+  m = /^(.*?\D)\s*(\d+)\s*(?:series\s*)?(al fallo|máximas?|maximas?)$/i.exec(t);
+  if (m && m[1].trim()) return { nombre: limpiarNombre(m[1]), series: Number(m[2]), repeticiones: 'al fallo' };
+  const [nombre, ...resto] = t.split(/\s+[—–-]\s+/);
+  return { nombre: limpiarNombre(nombre), series: null, repeticiones: resto.join(' — ').trim() };
+}
+
+function limpiarNombre(n: string) {
+  return n.replace(/[\s—–:,-]+$/, '').trim();
+}
+
+// Grupo muscular a partir del nombre del ejercicio, para las rutinas escritas
+// como texto (antes todas tomaban la categoría de la rutina, y en una rutina
+// de "Pecho" el press militar salía como pecho). El orden importa: lo más
+// específico va primero ("curl femoral" es pierna aunque diga "curl").
+const MUSCULO_POR_PALABRA: [RegExp, string][] = [
+  [/remadora|ergometro|caminadora|trote|correr|carrera|bicicleta(?! abdominal)|\bbici\b|eliptica|escalador|burpee|salto|hiit|cardio/, 'Cardio'],
+  [/curl femoral|femoral|isquio|sentadilla|prensa|zancada|desplante|extension de (cuadriceps|pierna)|cuadriceps|pantorrilla|talones|aductor|peso muerto rumano|rumano|step/, 'Pierna'],
+  [/hip thrust|gluteo|puente|abduc|patada de gluteo|swing/, 'Glúteo'],
+  [/triceps|press frances|fondos?\b|patada|press cerrado|diamante|extension (de brazos|sobre la cabeza)/, 'Tríceps'],
+  [/curl|biceps|martillo|predicador|scott/, 'Bíceps'],
+  [/militar|hombro|elevacion(es)? (laterales?|frontales?)|laterales|frontales|pajaro|vuelos? posteriores?|face pull|arnold|remo al menton|deltoide|press de hombro/, 'Hombro'],
+  [/jalon|remo|dominada|pull ?up|peso muerto|pullover|hiperextension|espalda|lumbar/, 'Espalda'],
+  [/press (de )?banca|banca|press (de )?pecho|inclinado|declinado|apertura|cruce|pec ?deck|pectoral|lagartija|flexiones|pecho/, 'Pecho'],
+  [/plancha|abdominal|crunch|core|elevacion de (piernas|rodillas)|rueda|giros? rusos?|lenador|bicicleta abdominal|oblicuo/, 'Core'],
+];
+
+export function musculoPorNombre(nombre: string): string | null {
+  const t = sinAcentos(nombre);
+  for (const [re, musculo] of MUSCULO_POR_PALABRA) if (re.test(t)) return musculo;
+  return null;
 }
 
 function instruccionesLibres(nombre: string) {
-  const clave = sinAcentos(nombre);
-  return EJERCICIOS_LIBRES.find((x) => sinAcentos(x.nombre) === clave)?.instrucciones ?? null;
+  return buscarLibre(nombre)?.instrucciones ?? null;
 }
 
-// Busca un ejercicio por nombre entre las máquinas del gimnasio y el catálogo libre.
+// Un ejercicio del catálogo libre por nombre exacto o, si no, por el inicio
+// ("Fondos" → "Fondos en paralelas").
+function buscarLibre(nombre: string) {
+  const clave = sinAcentos(nombre);
+  return (
+    EJERCICIOS_LIBRES.find((x) => sinAcentos(x.nombre) === clave) ??
+    EJERCICIOS_LIBRES.find((x) => sinAcentos(x.nombre).startsWith(clave + ' '))
+  );
+}
+
+// Busca un ejercicio por nombre entre las máquinas del gimnasio y el catálogo
+// libre: primero el nombre exacto y luego uno que empiece igual ("Press banca"
+// → "Press banca plano" de la máquina Press banca).
 function buscarPorNombre(nombre: string, machines: Machine[]) {
   const clave = sinAcentos(nombre);
-  for (const m of machines) {
-    const e = (m.ejercicios ?? []).find((x) => sinAcentos(x.nombre) === clave);
-    if (e)
-      return {
-        nombre: e.nombre,
-        musculo: e.musculo,
-        machineId: m.id,
-        machineNombre: m.nombre,
-        instrucciones: e.instrucciones || instruccionesLibres(e.nombre),
-      };
-  }
-  const libre = EJERCICIOS_LIBRES.find((x) => sinAcentos(x.nombre) === clave);
+  const enMaquinas = (igual: (n: string) => boolean) => {
+    for (const m of machines) {
+      const e = (m.ejercicios ?? []).find((x) => igual(sinAcentos(x.nombre)));
+      if (e)
+        return {
+          nombre: e.nombre,
+          musculo: e.musculo,
+          machineId: m.id,
+          machineNombre: m.nombre,
+          instrucciones: e.instrucciones || instruccionesLibres(e.nombre),
+        };
+    }
+    return null;
+  };
+  const exacto = enMaquinas((n) => n === clave);
+  if (exacto) return exacto;
+  const libreExacto = EJERCICIOS_LIBRES.find((x) => sinAcentos(x.nombre) === clave);
+  if (libreExacto)
+    return { nombre: libreExacto.nombre, musculo: libreExacto.musculo, machineId: null, machineNombre: null, instrucciones: libreExacto.instrucciones };
+  const parecido = enMaquinas((n) => n.startsWith(clave + ' '));
+  if (parecido) return parecido;
+  const libre = buscarLibre(nombre);
   return libre
     ? { nombre: libre.nombre, musculo: libre.musculo, machineId: null, machineNombre: null, instrucciones: libre.instrucciones }
     : null;
@@ -85,14 +148,15 @@ function instruccionesDe(machineId: string | null | undefined, nombre: string, m
 
 // Convierte la rutina del gimnasio en un plan. Las nuevas traen sus ejercicios
 // con músculo y descanso (items); las anteriores son texto, y el músculo se
-// saca del ejercicio de la máquina con el mismo nombre o de la categoría.
+// saca del ejercicio de la máquina con ese nombre, del propio nombre ("Press
+// militar" → Hombro) y, solo si no se reconoce, de la categoría de la rutina.
 export function planDeRutina(rutina: Routine, machines: Machine[]): PlanRutina {
   const items = rutina.items ?? [];
   const ejercicios: EjercicioPlan[] = items.length
     ? items.map((it, i) => ({
         clave: `${i}:${it.nombre}`,
         nombre: it.nombre,
-        musculo: it.musculo || rutina.categoria || 'Otro',
+        musculo: it.musculo || musculoPorNombre(it.nombre) || rutina.categoria || 'Otro',
         machineId: it.machineId ?? null,
         machineNombre: it.machineNombre ?? null,
         series: it.series ?? 3,
@@ -117,8 +181,10 @@ function planDeTexto(textos: string[], categoria: string, machines: Machine[]): 
       const hallado = buscarPorNombre(leido.nombre, machines);
       return {
         clave: `${i}:${leido.nombre}`,
-        nombre: hallado?.nombre ?? leido.nombre,
-        musculo: hallado?.musculo ?? (categoria || 'Otro'),
+        // El nombre que escribió el coach se respeta; de lo encontrado se
+        // toman el músculo, la máquina y cómo se hace.
+        nombre: leido.nombre || hallado?.nombre || texto,
+        musculo: hallado?.musculo || musculoPorNombre(leido.nombre) || categoria || 'Otro',
         machineId: hallado?.machineId ?? null,
         machineNombre: hallado?.machineNombre ?? null,
         series: leido.series ?? 3,
