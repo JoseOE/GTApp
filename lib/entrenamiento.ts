@@ -230,7 +230,8 @@ function planDeTexto(textos: string[], categoria: string, machines: Machine[]): 
         descansoSegundos: DESCANSO_POR_DEFECTO,
         reemplazaA: null,
         instrucciones: hallado?.instrucciones ?? null,
-        imagenes: hallado?.imagenes ?? null,
+        // Si no se encontró en las máquinas, la foto se busca por el nombre que escribió el coach.
+        imagenes: hallado?.imagenes ?? imagenesLibres(leido.nombre),
       };
     });
 }
