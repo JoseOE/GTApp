@@ -1,5 +1,6 @@
 import type { LoggedExercise, Machine, Routine, WorkoutSession } from './api';
 import { EJERCICIOS_LIBRES, type StarterRoutine } from '@/constants/StarterRoutines';
+import { imagenesLibres } from '@/constants/ImagenesEjercicios';
 
 // ─── Plan: lo que se va a hacer, antes de empezar ───
 
@@ -19,6 +20,8 @@ export type EjercicioPlan = {
   reemplazaA: string | null;
   // Cómo se hace: lo que capturó el gimnasio en la máquina, o el del catálogo libre.
   instrucciones?: string | null;
+  // Fotos de la posición inicial y la final (pueden faltar).
+  imagenes?: string[] | null;
 };
 
 export type PlanRutina = {
@@ -96,6 +99,17 @@ function instruccionesLibres(nombre: string) {
   return buscarLibre(nombre)?.instrucciones ?? null;
 }
 
+// Fotos de un ejercicio sin máquina ("Fondos" → las de "Fondos en paralelas").
+function fotosLibres(nombre: string) {
+  return imagenesLibres(buscarLibre(nombre)?.nombre ?? nombre);
+}
+
+// Las fotos del ejercicio de una máquina; si el gimnasio no tiene, las del
+// ejercicio libre con ese nombre.
+function conFotos(imagenes: string[] | null | undefined, nombre: string) {
+  return imagenes?.length ? imagenes : fotosLibres(nombre);
+}
+
 // Un ejercicio del catálogo libre por nombre exacto o, si no, por el inicio
 // ("Fondos" → "Fondos en paralelas").
 function buscarLibre(nombre: string) {
@@ -121,6 +135,7 @@ function buscarPorNombre(nombre: string, machines: Machine[]) {
           machineId: m.id,
           machineNombre: m.nombre,
           instrucciones: e.instrucciones || instruccionesLibres(e.nombre),
+          imagenes: conFotos(e.imagenes, e.nombre),
         };
     }
     return null;
@@ -129,12 +144,26 @@ function buscarPorNombre(nombre: string, machines: Machine[]) {
   if (exacto) return exacto;
   const libreExacto = EJERCICIOS_LIBRES.find((x) => sinAcentos(x.nombre) === clave);
   if (libreExacto)
-    return { nombre: libreExacto.nombre, musculo: libreExacto.musculo, machineId: null, machineNombre: null, instrucciones: libreExacto.instrucciones };
+    return {
+      nombre: libreExacto.nombre,
+      musculo: libreExacto.musculo,
+      machineId: null,
+      machineNombre: null,
+      instrucciones: libreExacto.instrucciones,
+      imagenes: imagenesLibres(libreExacto.nombre),
+    };
   const parecido = enMaquinas((n) => n.startsWith(clave + ' '));
   if (parecido) return parecido;
   const libre = buscarLibre(nombre);
   return libre
-    ? { nombre: libre.nombre, musculo: libre.musculo, machineId: null, machineNombre: null, instrucciones: libre.instrucciones }
+    ? {
+        nombre: libre.nombre,
+        musculo: libre.musculo,
+        machineId: null,
+        machineNombre: null,
+        instrucciones: libre.instrucciones,
+        imagenes: imagenesLibres(libre.nombre),
+      }
     : null;
 }
 
@@ -144,6 +173,14 @@ function instruccionesDe(machineId: string | null | undefined, nombre: string, m
   const m = machines.find((x) => x.id === machineId);
   const e = m?.ejercicios?.find((x) => sinAcentos(x.nombre) === clave);
   return e?.instrucciones || instruccionesLibres(nombre);
+}
+
+// Fotos de un ejercicio por su máquina y su nombre (o las del ejercicio libre).
+function imagenesDe(machineId: string | null | undefined, nombre: string, machines: Machine[]) {
+  const clave = sinAcentos(nombre);
+  const m = machines.find((x) => x.id === machineId);
+  const e = m?.ejercicios?.find((x) => sinAcentos(x.nombre) === clave);
+  return conFotos(e?.imagenes, nombre);
 }
 
 // Convierte la rutina del gimnasio en un plan. Las nuevas traen sus ejercicios
@@ -164,6 +201,7 @@ export function planDeRutina(rutina: Routine, machines: Machine[]): PlanRutina {
         descansoSegundos: it.descansoSegundos ?? DESCANSO_POR_DEFECTO,
         reemplazaA: null,
         instrucciones: instruccionesDe(it.machineId, it.nombre, machines),
+        imagenes: imagenesDe(it.machineId, it.nombre, machines),
       }))
     : planDeTexto(rutina.ejercicios ?? [], rutina.categoria, machines);
   return { rutinaId: rutina.id, nombre: rutina.nombre, ejercicios };
@@ -192,6 +230,7 @@ function planDeTexto(textos: string[], categoria: string, machines: Machine[]): 
         descansoSegundos: DESCANSO_POR_DEFECTO,
         reemplazaA: null,
         instrucciones: hallado?.instrucciones ?? null,
+        imagenes: hallado?.imagenes ?? null,
       };
     });
 }
@@ -204,6 +243,7 @@ export type Alternativa = {
   series?: number | null;
   repeticiones?: string;
   instrucciones?: string | null;
+  imagenes?: string[] | null;
 };
 
 // Ejercicios que pueden reemplazar a otro: los del mismo músculo, primero los
@@ -219,9 +259,10 @@ export function alternativas(ejercicio: { nombre: string; musculo: string }, mac
         series: e.series,
         repeticiones: e.repeticiones,
         instrucciones: e.instrucciones || instruccionesLibres(e.nombre),
+        imagenes: conFotos(e.imagenes, e.nombre),
       }))
     ),
-    ...EJERCICIOS_LIBRES.map((e) => ({ ...e, machineId: null, machineNombre: null })),
+    ...EJERCICIOS_LIBRES.map((e) => ({ ...e, machineId: null, machineNombre: null, imagenes: imagenesLibres(e.nombre) })),
   ].filter((a) => sinAcentos(a.nombre) !== sinAcentos(ejercicio.nombre));
   return {
     mismoMusculo: todos.filter((a) => mismoMusculo(a.musculo, ejercicio.musculo)),
@@ -238,6 +279,7 @@ export function reemplazar(original: EjercicioPlan, nuevo: Alternativa): Ejercic
     machineId: nuevo.machineId,
     machineNombre: nuevo.machineNombre,
     instrucciones: nuevo.instrucciones ?? instruccionesLibres(nuevo.nombre),
+    imagenes: nuevo.imagenes ?? fotosLibres(nuevo.nombre),
     reemplazaA: original.reemplazaA ?? original.nombre,
   };
 }
