@@ -23,15 +23,10 @@ import { ResultadoRenovacion } from '@/components/renovacion/ResultadoRenovacion
 // cada 2 s unas cuantas veces (el pago con tarjeta o PayPal tarda un momento).
 const REINTENTOS = 5;
 
-// "4:07" a partir de los milisegundos que faltan.
-function reloj(ms: number) {
-  const s = Math.max(0, Math.ceil(ms / 1000));
-  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
-}
-
 // Renovar la membresía. La abre el push que llega cuando el lector de la
-// puerta niega la entrada porque venció: si se paga mientras la alerta sigue
-// vigente (10 minutos), la puerta se abre sola en cuanto se confirma el pago.
+// puerta niega la entrada porque venció. Se paga aquí y, ya al día, se vuelve
+// a pasar la tarjeta: la puerta no se abre sola, así responde solo con la
+// persona enfrente y quien paga no detiene a los demás.
 export default function RenovarMembresiaScreen() {
   const { colors, brand } = useTheme();
   const { account } = useAccount();
@@ -43,7 +38,6 @@ export default function RenovarMembresiaScreen() {
   const [aviso, setAviso] = useState<string | null>(null);
   const [preparando, setPreparando] = useState(false);
   const [refrescando, setRefrescando] = useState(false);
-  const [ahora, setAhora] = useState(Date.now());
   // pagado=1: viene del checkout de la renovación (metodo, orderId del pedido).
   const { pagado, metodo, orderId } = useLocalSearchParams<{ pagado?: string; metodo?: string; orderId?: string }>();
   const volvioDelPago = pagado === '1';
@@ -69,22 +63,7 @@ export default function RenovarMembresiaScreen() {
     }, [cargar])
   );
 
-  // La cuenta regresiva de la puerta: cada segundo, y al llegar a cero se
-  // vuelve a preguntar (la alerta pasa a EXPIRADA).
-  const puerta = datos?.puerta ?? null;
-  const pendiente = puerta?.estado === 'PENDIENTE';
-  const restante = pendiente && puerta ? new Date(puerta.venceEn).getTime() - ahora : 0;
-  useEffect(() => {
-    if (!pendiente) return;
-    const t = setInterval(() => setAhora(Date.now()), 1000);
-    return () => clearInterval(t);
-  }, [pendiente]);
-  useEffect(() => {
-    if (pendiente && restante <= 0) cargar();
-  }, [pendiente, restante <= 0, cargar]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Mientras el pago se confirma: la puerta todavía no se ve abierta y la
-  // membresía sigue vencida.
+  // Mientras el pago se confirma: la membresía sigue vencida.
   const esperandoConfirmacion =
     volvioDelPago && metodo !== 'paynet' && !!datos && datos.vencida && !(datos.puerta?.estado === 'APROBADA');
   useEffect(() => {
@@ -187,7 +166,7 @@ export default function RenovarMembresiaScreen() {
 
         {datos.vencida ? (
           <>
-            <PuertaAviso datos={datos} restante={restante} />
+            <PuertaAviso datos={datos} />
 
             <View style={{ gap: Spacing.sm }}>
               <Text style={[Type.overline, styles.rotulo, { color: colors.textSecondary }]}>TU PLAN</Text>
@@ -235,8 +214,8 @@ export default function RenovarMembresiaScreen() {
               disabled={!elegido}
             />
             <Text style={[Type.caption, styles.centro, { color: colors.textSecondary }]}>
-              Pagas con tarjeta, PayPal o efectivo en tienda. Con efectivo en tienda la puerta no se abre en el
-              momento: tu membresía se renueva cuando se registre el pago.
+              Pagas con tarjeta, PayPal o efectivo en tienda. Con efectivo en tienda tu membresía se renueva cuando
+              se registre el pago. Después, pasa tu tarjeta en la puerta.
             </Text>
           </>
         ) : (
@@ -250,25 +229,11 @@ export default function RenovarMembresiaScreen() {
   );
 }
 
-// Qué pasa con la puerta: si la alerta sigue esperando, la cuenta regresiva;
-// si no, que al pagar vuelva a pasar la tarjeta.
-function PuertaAviso({ datos, restante }: { datos: Renovacion; restante: number }) {
+// Qué pasa con la puerta: si recepción ya le abrió, se le dice; si no, cómo
+// entra después de pagar.
+function PuertaAviso({ datos }: { datos: Renovacion }) {
   const { colors, brand } = useTheme();
   const puerta = datos.puerta;
-
-  if (puerta?.estado === 'PENDIENTE' && restante > 0) {
-    return (
-      <View style={[styles.puerta, { borderColor: brand.primary + '55' }]}>
-        <Text style={[Type.overline, { color: brand.primary }]}>{puerta.lector ? puerta.lector.toUpperCase() : 'LA PUERTA'} TE ESPERA</Text>
-        <Text style={[Type.stat, styles.reloj]} accessibilityLabel={`Quedan ${reloj(restante)} minutos`}>
-          {reloj(restante)}
-        </Text>
-        <Text style={[Type.footnote, styles.puertaTexto]}>
-          Paga en los próximos {reloj(restante)} y la puerta se abre sola.
-        </Text>
-      </View>
-    );
-  }
 
   if (puerta?.estado === 'APROBADA') {
     return (
@@ -280,9 +245,15 @@ function PuertaAviso({ datos, restante }: { datos: Renovacion; restante: number 
   }
 
   return (
-    <View style={[styles.nota, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-      <Ionicons name="card-outline" size={18} color={colors.textSecondary} />
-      <Text style={[Type.footnote, { color: colors.text, flex: 1 }]}>Al pagar, vuelve a pasar tu tarjeta.</Text>
+    <View style={[styles.puerta, { borderColor: brand.primary + '55' }]}>
+      <Text style={[Type.overline, { color: brand.primary }]}>
+        {puerta?.lector ? puerta.lector.toUpperCase() : 'EN LA PUERTA'}
+      </Text>
+      <Ionicons name="card" size={40} color="#FFFFFF" style={{ marginVertical: Spacing.sm }} />
+      <Text style={[Type.headline, styles.puertaTitulo]}>Paga aquí y vuelve a pasar tu tarjeta</Text>
+      <Text style={[Type.footnote, styles.puertaTexto]}>
+        En cuanto se confirme el pago, tu membresía queda al día y el lector te deja entrar.
+      </Text>
     </View>
   );
 }
@@ -297,8 +268,8 @@ const styles = StyleSheet.create({
   plan: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, padding: Spacing.lg },
   planNombre: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, flexWrap: 'wrap' },
   nota: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, borderWidth: 1, borderRadius: Radius.lg, padding: Spacing.md },
-  // La cuenta regresiva va en la tarjeta oscura "deportiva", como la del día en Inicio.
+  // El aviso de la puerta va en la tarjeta oscura "deportiva", como la del día en Inicio.
   puerta: { backgroundColor: '#141417', borderRadius: Radius.xl, borderWidth: 1, padding: Spacing.xl, alignItems: 'center', gap: 2 },
-  reloj: { color: '#FFFFFF', fontSize: 48, lineHeight: 54 },
+  puertaTitulo: { color: '#FFFFFF', textAlign: 'center' },
   puertaTexto: { color: 'rgba(255,255,255,0.7)', textAlign: 'center' },
 });

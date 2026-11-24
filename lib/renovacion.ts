@@ -3,8 +3,8 @@ import type { Carrito } from './tienda';
 
 // Renovar la membresía desde la puerta (RenovacionController en GTWeb).
 // Cuando el lector niega la entrada porque la membresía venció, llega un push;
-// si el socio paga desde la app mientras la alerta sigue vigente (10 minutos),
-// la puerta se abre sola en cuanto se confirma el pago.
+// el socio paga desde la app y, ya al día, vuelve a pasar su tarjeta para
+// entrar. La puerta no se abre sola al pagar.
 
 export type PlanRenovacion = {
   id: string;
@@ -14,7 +14,8 @@ export type PlanRenovacion = {
   duracionTexto: string;
 };
 
-export type EstadoPuerta = 'PENDIENTE' | 'APROBADA' | 'RECHAZADA' | 'EXPIRADA';
+// RENOVADA: ya pagó y la alerta se cerró; APROBADA: recepción le abrió.
+export type EstadoPuerta = 'PENDIENTE' | 'APROBADA' | 'RECHAZADA' | 'EXPIRADA' | 'RENOVADA';
 
 export type PuertaRenovacion = {
   solicitudId: string;
