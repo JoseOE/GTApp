@@ -101,6 +101,7 @@ object Vivo {
             .put("s", actual.getInt("s"))
             .put("reps", if (actual.isNull("reps")) JSONObject.NULL else actual.getInt("reps"))
             .put("peso", if (actual.isNull("peso")) JSONObject.NULL else actual.getDouble("peso"))
+            .put("seg", if (actual.isNull("seg")) JSONObject.NULL else actual.getInt("seg"))
             .put("t", ahora)
         )
         indice += 1
@@ -110,6 +111,7 @@ object Vivo {
           if (siguiente.getInt("e") == actual.getInt("e")) {
             if (siguiente.isNull("peso") && !actual.isNull("peso")) siguiente.put("peso", actual.getDouble("peso"))
             if (siguiente.isNull("reps") && !actual.isNull("reps")) siguiente.put("reps", actual.getInt("reps"))
+            if (siguiente.isNull("seg") && !actual.isNull("seg")) siguiente.put("seg", actual.getInt("seg"))
           }
         }
         val descanso = actual.optInt("descanso", 0)
@@ -197,9 +199,12 @@ object Vivo {
       val nombre = serie.optString("nombre", "Ejercicio")
       b.setContentTitle(if (enDescanso) "Descanso · sigue $nombre" else nombre)
       b.setContentText(detalle(serie))
-      val paso = estado.optDouble("paso", 2.5)
-      b.addAction(accion(ctx, ACCION_MENOS, "−${kg(paso)}", 1))
-      b.addAction(accion(ctx, ACCION_MAS, "+${kg(paso)}", 2))
+      // Las series por tiempo (plancha, cardio) no llevan botones de peso.
+      if (serie.isNull("seg")) {
+        val paso = estado.optDouble("paso", 2.5)
+        b.addAction(accion(ctx, ACCION_MENOS, "−${kg(paso)}", 1))
+        b.addAction(accion(ctx, ACCION_MAS, "+${kg(paso)}", 2))
+      }
       b.addAction(accion(ctx, ACCION_HECHA, "✓ Serie hecha", 3))
     } else {
       b.setContentTitle("¡Terminaste todas las series!")
@@ -243,6 +248,12 @@ object Vivo {
     val partes = mutableListOf(serie.optString("serie", ""))
     val peso = if (serie.isNull("peso")) null else serie.getDouble("peso")
     val reps = if (serie.isNull("reps")) null else serie.getInt("reps")
+    val seg = if (serie.isNull("seg")) null else serie.getInt("seg")
+    if (seg != null) {
+      if (peso != null && peso > 0) partes.add(kg(peso))
+      partes.add(if (seg < 60) "$seg s" else if (seg % 60 == 0) "${seg / 60} min" else "${seg / 60}:${String.format("%02d", seg % 60)} min")
+      return partes.filter { it.isNotBlank() }.joinToString(" · ")
+    }
     when {
       peso != null && peso > 0 && reps != null -> partes.add("${kg(peso)} × $reps")
       peso != null && peso > 0 -> partes.add(kg(peso))

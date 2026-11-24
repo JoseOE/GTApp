@@ -7,12 +7,12 @@ import { fetchWorkouts, saveWorkout } from './api';
 import { hexToRgb } from './color';
 import {
   enCurso,
-  formatoPeso,
   nuevaSesion,
   paraGuardar,
   reemplazar,
   resumenDe,
   siguientePendiente,
+  textoSerie,
   type Alternativa,
   type PlanRutina,
   type Resumen,
@@ -94,7 +94,9 @@ function aplicarAcciones(sesion: Sesion, acciones: AccionVivo[]): Sesion {
     const ej = actual.ejercicios[a.e];
     if (!ej || !ej.registro[a.s]) continue;
     if (a.tipo === 'hecha') {
-      actual = completar(actual, a.e, a.s, { repeticiones: a.reps, peso: a.peso }, a.t);
+      const valores: Partial<SerieEnCurso> = { repeticiones: a.reps, peso: a.peso };
+      if (a.seg != null) valores.segundos = a.seg;
+      actual = completar(actual, a.e, a.s, valores, a.t);
     } else if (a.tipo === 'peso') {
       actual = {
         ...actual,
@@ -117,8 +119,9 @@ function pendientes(sesion: Sesion): SeriePendiente[] {
         s,
         nombre: ej.nombre,
         serie: `Serie ${s + 1} de ${ej.registro.length}`,
-        reps: r.repeticiones,
+        reps: r.segundos ? null : r.repeticiones,
         peso: r.peso,
+        seg: r.segundos ?? null,
         descanso: ej.descansoSegundos,
       });
     });
@@ -192,10 +195,11 @@ export function EntrenamientoProvider({ children }: PropsWithChildren) {
       const ej = sig ? sesion.ejercicios[sig.e] : null;
       const r = sig && ej ? ej.registro[sig.s] : null;
       if (sesion.descanso && ej && sig && r) {
-        const detalle = [r.peso ? `${formatoPeso(r.peso)} kg` : '', r.repeticiones ? `× ${r.repeticiones}` : '']
-          .filter(Boolean)
-          .join(' ');
-        programarFinDescanso(sesion.descanso.hasta, `Sigue: ${ej.nombre} · Serie ${sig.s + 1} de ${ej.registro.length}${detalle ? ' · ' + detalle : ''}`);
+        const detalle = textoSerie(r);
+        programarFinDescanso(
+          sesion.descanso.hasta,
+          `Sigue: ${ej.nombre} · Serie ${sig.s + 1} de ${ej.registro.length}${detalle !== '–' ? ' · ' + detalle : ''}`
+        );
       } else {
         cancelarFinDescanso();
       }
@@ -281,7 +285,8 @@ export function EntrenamientoProvider({ children }: PropsWithChildren) {
           if (i !== e) return x;
           const cambiado = reemplazar(x, nuevo);
           const hechas = x.registro.some((r) => r.completada);
-          return hechas ? { ...cambiado, registro: x.registro } : enCurso(cambiado);
+          if (hechas) return { ...cambiado, registro: x.registro };
+          return enCurso(cambiado, ses.anteriores);
         }),
       })),
     [modificar]
