@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -14,11 +14,12 @@ import { Reveal } from '@/components/ui/Reveal';
 import { StateCard } from '@/components/ui/StateCard';
 import { AnimatedPressable } from '@/components/ui/AnimatedPressable';
 import { SelectorReemplazo } from '@/components/entrenamiento/SelectorReemplazo';
-import { FotosEjercicio } from '@/components/entrenamiento/FotosEjercicio';
+import { FotosEjercicio, MiniaturaEjercicio } from '@/components/entrenamiento/FotosEjercicio';
 import { Radius, Spacing, Type } from '@/constants/Theme';
 import { STARTER_ROUTINES } from '@/constants/StarterRoutines';
 import { fetchMyMachines, fetchMyRoutines, fetchWorkouts, type Machine } from '@/lib/api';
 import { aplicarCambios, guardarCambios, leerCambios } from '@/lib/cambiosRutina';
+import { alerta } from '@/lib/dialogo';
 import {
   claveEjercicio,
   planDeRutina,
@@ -112,11 +113,11 @@ export default function RutinaScreen() {
       empezar();
       return;
     }
-    Alert.alert('Ya tienes un entrenamiento en curso', `Llevas "${sesion.nombre}" sin terminar.`, [
+    alerta('Ya tienes un entrenamiento en curso', `Llevas "${sesion.nombre}" sin terminar.`, [
       { text: 'Continuar ese', onPress: () => router.replace('/entrenando') },
       { text: 'Descartarlo y empezar este', style: 'destructive', onPress: empezar },
       { text: 'Cancelar', style: 'cancel' },
-    ]);
+    ], { icono: 'timer-outline', tono: 'marca' });
   }
 
   if (error) {
@@ -179,6 +180,7 @@ export default function RutinaScreen() {
               <View style={[styles.numero, { backgroundColor: brand.primary + '1A' }]}>
                 <Text style={[Type.callout, { color: brand.primaryDark }]}>{i + 1}</Text>
               </View>
+              <MiniaturaEjercicio imagenes={e.imagenes} nombre={e.nombre} tamano={48} />
               <View style={{ flex: 1, gap: 2 }}>
                 <Text style={[Type.headline, { color: colors.text }]}>{e.nombre}</Text>
                 <Text style={[Type.caption, { color: colors.textSecondary }]}>

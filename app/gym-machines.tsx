@@ -12,6 +12,7 @@ import { StateCard } from '@/components/ui/StateCard';
 import { Reveal } from '@/components/ui/Reveal';
 import { AnimatedPressable } from '@/components/ui/AnimatedPressable';
 import { MiniaturaEjercicio } from '@/components/entrenamiento/FotosEjercicio';
+import { esFotoAnterior, imagenesPorNombre } from '@/constants/ImagenesEjercicios';
 import { FontFamily, Spacing } from '@/constants/Theme';
 import { fetchMyMachines, type Machine } from '@/lib/api';
 
@@ -139,7 +140,7 @@ function MachineCard({ machine, index }: { machine: Machine; index: number }) {
           <View style={[styles.lista, { borderTopColor: colors.border }]}>
             {ejercicios.map((e) => (
               <View key={e.id} style={styles.ejercicio}>
-                <MiniaturaEjercicio imagenes={e.imagenes} nombre={e.nombre} />
+                <MiniaturaEjercicio imagenes={e.imagenes?.length && !e.imagenes.some(esFotoAnterior) ? e.imagenes : imagenesPorNombre(e.nombre)} nombre={e.nombre} />
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.ejercicioNombre, { color: colors.text }]}>{e.nombre}</Text>
                   {e.instrucciones ? (

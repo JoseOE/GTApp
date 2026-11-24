@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -14,6 +14,7 @@ import { ApiError } from '@/lib/api';
 import { useAccount } from '@/lib/AccountContext';
 import { borrarOpinion, fetchMiOpinion, guardarOpinion, MAX_OPINION, MIN_OPINION, type Opinion } from '@/lib/opiniones';
 import { FormularioConTeclado } from '@/components/ui/FormularioConTeclado';
+import { alerta } from '@/lib/dialogo';
 
 const TEXTOS = ['', 'Mala', 'Regular', 'Buena', 'Muy buena', 'Excelente'];
 
@@ -59,7 +60,7 @@ export default function OpinionScreen() {
   }
 
   function borrar() {
-    Alert.alert('Borrar tu opinión', 'Dejará de aparecer en la página de GymTrack.', [
+    alerta('Borrar tu opinión', 'Dejará de aparecer en la página de GymTrack.', [
       { text: 'Cancelar', style: 'cancel' },
       {
         text: 'Borrar',
@@ -76,7 +77,7 @@ export default function OpinionScreen() {
           }
         },
       },
-    ]);
+    ], { icono: 'trash-outline', tono: 'peligro' });
   }
 
   if (cargando) {

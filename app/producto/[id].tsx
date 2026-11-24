@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Image, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as WebBrowser from 'expo-web-browser';
@@ -21,6 +21,7 @@ import { useAccount } from '@/lib/AccountContext';
 import { puedeComprar, useCarrito } from '@/lib/CarritoContext';
 import { dinero, urlImagen } from '@/lib/formato';
 import { fetchProducto, type Producto } from '@/lib/tienda';
+import { alerta } from '@/lib/dialogo';
 
 export default function ProductoScreen() {
   // resenar=1: viene de "Califica tu compra" y abre el editor de la reseña.
@@ -93,7 +94,7 @@ export default function ProductoScreen() {
         total: carrito.total,
       });
     } catch (err) {
-      Alert.alert('No se pudo agregar', err instanceof ApiError ? err.message : 'Inténtalo de nuevo.');
+      alerta('No se pudo agregar', err instanceof ApiError ? err.message : 'Inténtalo de nuevo.');
     } finally {
       setAgregando(false);
     }

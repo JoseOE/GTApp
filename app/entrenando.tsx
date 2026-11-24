@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { router, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -17,9 +17,10 @@ import { AnimatedPressable } from '@/components/ui/AnimatedPressable';
 import { FormularioConTeclado } from '@/components/ui/FormularioConTeclado';
 import { Contador, useAhora } from '@/components/entrenamiento/Contador';
 import { SelectorReemplazo } from '@/components/entrenamiento/SelectorReemplazo';
-import { FotosEjercicio } from '@/components/entrenamiento/FotosEjercicio';
+import { FotosEjercicio, MiniaturaEjercicio } from '@/components/entrenamiento/FotosEjercicio';
 import { FontFamily, Radius, Spacing, Type } from '@/constants/Theme';
 import { ApiError, fetchMyMachines, type Machine } from '@/lib/api';
+import { alerta } from '@/lib/dialogo';
 import {
   PASO_SEGUNDOS,
   PASOS_PESO,
@@ -151,18 +152,18 @@ export default function EntrenandoScreen() {
 
   function alTerminar() {
     if (hechas === 0) {
-      Alert.alert('Aún no marcas ninguna serie', '¿Quieres descartar este entrenamiento?', [
+      alerta('Aún no marcas ninguna serie', '¿Quieres descartar este entrenamiento?', [
         { text: 'Seguir entrenando', style: 'cancel' },
         { text: 'Descartar', style: 'destructive', onPress: alDescartar },
-      ]);
+      ], { icono: 'barbell-outline', tono: 'peligro' });
       return;
     }
     const faltan = totalSeries - hechas;
     if (faltan > 0) {
-      Alert.alert('¿Terminar ya?', `Te ${faltan === 1 ? 'falta 1 serie' : `faltan ${faltan} series`}. Solo se guardan las que marcaste.`, [
+      alerta('¿Terminar ya?', `Te ${faltan === 1 ? 'falta 1 serie' : `faltan ${faltan} series`}. Solo se guardan las que marcaste.`, [
         { text: 'Seguir entrenando', style: 'cancel' },
         { text: 'Terminar', onPress: guardar },
-      ]);
+      ], { icono: 'flag-outline', tono: 'marca' });
       return;
     }
     guardar();
@@ -264,6 +265,7 @@ export default function EntrenandoScreen() {
             <Animated.View key={`${ej.clave}-${e}`} layout={reducir ? undefined : LinearTransition.duration(200)}>
               <Card style={[styles.ejercicio, esActual && { borderColor: brand.primary, borderWidth: 1.5 }]}>
                 <View style={styles.ejCabeza}>
+                  <MiniaturaEjercicio imagenes={ej.imagenes} nombre={ej.nombre} tamano={52} />
                   <View style={{ flex: 1 }}>
                     <Text style={[Type.caption, { color: completo ? brand.success : colors.textSecondary }]}>
                       {completo ? 'COMPLETO' : `EJERCICIO ${e + 1} DE ${sesion.ejercicios.length}`}
@@ -340,10 +342,10 @@ export default function EntrenandoScreen() {
                       <AnimatedPressable
                         onLongPress={() =>
                           ej.registro.length > 1 &&
-                          Alert.alert(`¿Quitar la serie ${s + 1}?`, undefined, [
+                          alerta(`¿Quitar la serie ${s + 1}?`, undefined, [
                             { text: 'Cancelar', style: 'cancel' },
                             { text: 'Quitar', style: 'destructive', onPress: () => quitarSerie(e, s) },
-                          ])
+                          ], { icono: 'remove-circle-outline', tono: 'peligro' })
                         }
                         style={styles.colSerie}
                         accessibilityHint="Mantén presionado para quitarla">
@@ -434,10 +436,10 @@ export default function EntrenandoScreen() {
         <PrimaryButton label="Terminar entrenamiento" icon="flag" onPress={alTerminar} loading={guardando} />
         <AnimatedPressable
           onPress={() =>
-            Alert.alert('¿Descartar el entrenamiento?', 'No se guardará nada de lo que llevas.', [
+            alerta('¿Descartar el entrenamiento?', 'No se guardará nada de lo que llevas.', [
               { text: 'Seguir entrenando', style: 'cancel' },
               { text: 'Descartar', style: 'destructive', onPress: alDescartar },
-            ])
+            ], { icono: 'barbell-outline', tono: 'peligro' })
           }
           style={styles.descartar}>
           <Text style={[Type.callout, { color: brand.danger }]}>Descartar entrenamiento</Text>

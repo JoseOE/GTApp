@@ -1,4 +1,4 @@
-import { Alert, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import * as WebBrowser from 'expo-web-browser';
@@ -12,6 +12,7 @@ import { FontFamily, Radius, Spacing } from '@/constants/Theme';
 import { dinero, fechaLarga } from '@/lib/formato';
 import { rutaCodigoPaynet } from '@/lib/recibos';
 import type { Pedido } from '@/lib/tienda';
+import { alerta } from '@/lib/dialogo';
 
 // Tiendas de la red Paynet donde se paga la ficha.
 export const TIENDAS_EFECTIVO: Logo[] = ['oxxo', '7-eleven', 'walmart', 'bodega-aurrera', 'farmacias-del-ahorro', 'circle-k'];
@@ -26,7 +27,7 @@ export function FichaPaynet({ pedido }: { pedido: Pedido }) {
 
   async function copiar() {
     await Clipboard.setStringAsync(ficha!.referencia.replace(/\s/g, ''));
-    Alert.alert('Referencia copiada', ficha!.referencia);
+    alerta('Referencia copiada', ficha!.referencia, undefined, { icono: 'copy-outline', tono: 'exito' });
   }
 
   return (

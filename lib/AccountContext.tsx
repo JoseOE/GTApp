@@ -1,10 +1,11 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
-import { Alert, AppState } from 'react-native';
+import { AppState } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 
 import { ApiError, fetchAccount, logoutRequest, registerPushToken, type Account } from './api';
 import { cancelarRecordatorios } from './notifications';
 import { clearSession, getSession, onSesionVencida } from './session';
+import { alerta } from './dialogo';
 
 type AccountState = {
   account: Account | null;
@@ -112,7 +113,7 @@ export function AccountProvider({ children }: { children: ReactNode }) {
         setAccount(null);
         setError(null);
         router.replace('/(auth)/login');
-        Alert.alert('Tu sesión venció', 'Inicia sesión de nuevo para continuar.');
+        alerta('Tu sesión venció', 'Inicia sesión de nuevo para continuar.', undefined, { icono: 'lock-closed-outline', tono: 'aviso' });
       }),
     []
   );

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { useTheme } from '@/hooks/useTheme';
@@ -12,6 +12,7 @@ import { FontFamily, Radius, Spacing } from '@/constants/Theme';
 import { ApiError } from '@/lib/api';
 import { fechaLarga } from '@/lib/formato';
 import { borrarResena, fetchResenas, type Resena, type ResenasProducto } from '@/lib/tienda';
+import { alerta } from '@/lib/dialogo';
 
 // Reseñas del producto: resumen por estrellas, la propia (si compró) y las
 // demás de 10 en 10. abrirEditor llega desde "Califica tu compra" en Mis pedidos.
@@ -62,14 +63,14 @@ export function Resenas({
       setDatos({ ...siguiente, resenas: [...datos.resenas, ...siguiente.resenas] });
       setPagina(pagina + 1);
     } catch (err) {
-      Alert.alert('No se pudieron cargar', err instanceof ApiError ? err.message : 'Inténtalo de nuevo.');
+      alerta('No se pudieron cargar', err instanceof ApiError ? err.message : 'Inténtalo de nuevo.');
     } finally {
       setCargandoMas(false);
     }
   }
 
   function confirmarBorrar() {
-    Alert.alert('Borrar tu reseña', 'Se quitará de la tienda. Podrás escribir otra después.', [
+    alerta('Borrar tu reseña', 'Se quitará de la tienda. Podrás escribir otra después.', [
       { text: 'Cancelar', style: 'cancel' },
       {
         text: 'Borrar',
@@ -80,11 +81,11 @@ export function Resenas({
             await cargar();
             onCambio?.();
           } catch (err) {
-            Alert.alert('No se pudo borrar', err instanceof ApiError ? err.message : 'Inténtalo de nuevo.');
+            alerta('No se pudo borrar', err instanceof ApiError ? err.message : 'Inténtalo de nuevo.');
           }
         },
       },
-    ]);
+    ], { icono: 'trash-outline', tono: 'peligro' });
   }
 
   if (error && !datos) {

@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Alert, BackHandler, StyleSheet, Text, View } from 'react-native';
+import { BackHandler, StyleSheet, Text, View } from 'react-native';
 import { router, Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -12,6 +12,7 @@ import { FontFamily, Spacing } from '@/constants/Theme';
 import { useAccount } from '@/lib/AccountContext';
 import { posponerTemporal } from '@/lib/contrasena';
 import { FormularioConTeclado } from '@/components/ui/FormularioConTeclado';
+import { alerta } from '@/lib/dialogo';
 
 // Cambiar la contraseña con un código que llega al correo de la cuenta. Si la
 // cuenta trae la contraseña temporal de recepción (su nombre de usuario), no se
@@ -62,7 +63,7 @@ export default function CambiarContrasenaScreen() {
             onListo={async (_email, mensaje) => {
               // Ya no es temporal: la cuenta se vuelve a pedir para quitar el aviso.
               await reload();
-              Alert.alert('Listo', mensaje);
+              alerta('Listo', mensaje);
               if (router.canGoBack()) router.back();
               else router.replace('/(tabs)');
             }}

@@ -19,6 +19,7 @@ import { GymBrandContext } from '@/hooks/useTheme';
 import { AccountProvider, useAccount } from '@/lib/AccountContext';
 import { CarritoProvider } from '@/lib/CarritoContext';
 import { EntrenamientoProvider } from '@/lib/EntrenamientoContext';
+import { DialogoHost } from '@/components/ui/Dialogo';
 import { GymSplash } from '@/components/GymSplash';
 import { guardarMarca, leerMarca, marcaDe, type Marca } from '@/lib/marcaGuardada';
 import {
@@ -268,6 +269,8 @@ function RootNavigator() {
           />
         ) : null}
       </View>
+      {/* Avisos y confirmaciones con el estilo de GymTrack (lib/dialogo.ts). */}
+      <DialogoHost />
     </GymBrandContext.Provider>
   );
 }

@@ -1,6 +1,6 @@
 import type { LoggedExercise, Machine, Routine, WorkoutSession } from './api';
 import { EJERCICIOS_LIBRES, type StarterRoutine } from '@/constants/StarterRoutines';
-import { imagenesLibres } from '@/constants/ImagenesEjercicios';
+import { esFotoAnterior, imagenesLibres } from '@/constants/ImagenesEjercicios';
 
 // ─── Plan: lo que se va a hacer, antes de empezar ───
 
@@ -107,7 +107,7 @@ function fotosLibres(nombre: string) {
 // Las fotos del ejercicio de una máquina; si el gimnasio no tiene, las del
 // ejercicio libre con ese nombre.
 function conFotos(imagenes: string[] | null | undefined, nombre: string) {
-  return imagenes?.length ? imagenes : fotosLibres(nombre);
+  return imagenes?.length && !imagenes.some(esFotoAnterior) ? imagenes : fotosLibres(nombre);
 }
 
 // Un ejercicio del catálogo libre por nombre exacto o, si no, por el inicio
@@ -230,7 +230,8 @@ function planDeTexto(textos: string[], categoria: string, machines: Machine[]): 
         descansoSegundos: DESCANSO_POR_DEFECTO,
         reemplazaA: null,
         instrucciones: hallado?.instrucciones ?? null,
-        imagenes: hallado?.imagenes ?? null,
+        // Si no se encontró en las máquinas, la foto se busca por el nombre que escribió el coach.
+        imagenes: hallado?.imagenes ?? imagenesLibres(leido.nombre),
       };
     });
 }
