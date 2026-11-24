@@ -12,6 +12,8 @@ export type SeriePendiente = {
   serie: string;
   reps: number | null;
   peso: number | null;
+  // Series por tiempo: los segundos (y reps va en null).
+  seg: number | null;
   descanso: number;
 };
 
@@ -25,7 +27,7 @@ export type EstadoVivo = {
 };
 
 export type AccionVivo =
-  | { tipo: 'hecha'; e: number; s: number; reps: number | null; peso: number | null; t: number }
+  | { tipo: 'hecha'; e: number; s: number; reps: number | null; peso: number | null; seg?: number | null; t: number }
   | { tipo: 'peso'; e: number; s: number; peso: number };
 
 type Eventos = { onAccion: () => void };

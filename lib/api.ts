@@ -152,6 +152,8 @@ export type Machine = {
 export type LoggedSet = {
   repeticiones: number | null;
   peso: number | null;
+  // Series por tiempo (plancha, cardio).
+  segundos?: number | null;
   completada: boolean;
 };
 

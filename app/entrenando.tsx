@@ -19,7 +19,15 @@ import { Contador, useAhora } from '@/components/entrenamiento/Contador';
 import { SelectorReemplazo } from '@/components/entrenamiento/SelectorReemplazo';
 import { FontFamily, Radius, Spacing, Type } from '@/constants/Theme';
 import { ApiError, fetchMyMachines, type Machine } from '@/lib/api';
-import { PASOS_PESO, reloj, siguientePendiente, textoDescanso } from '@/lib/entrenamiento';
+import {
+  PASO_SEGUNDOS,
+  PASOS_PESO,
+  esPorTiempo,
+  reloj,
+  siguientePendiente,
+  textoDescanso,
+  textoSerie,
+} from '@/lib/entrenamiento';
 
 // El entrenamiento en curso: el tiempo corriendo, cada ejercicio con sus series
 // (reps y peso con botones de paso), el descanso entre series y "Terminar".
@@ -68,6 +76,22 @@ export default function EntrenandoScreen() {
   }, [descansoHasta, restante, saltarDescanso]);
 
   const actual = useMemo(() => (sesion ? siguientePendiente(sesion) : null), [sesion]);
+
+  // Cuenta regresiva de una serie por tiempo (plancha, cardio): al llegar a
+  // cero vibra y la marca como hecha.
+  const [cronometro, setCronometro] = useState<{ e: number; s: number; hasta: number } | null>(null);
+  useEffect(() => {
+    if (!cronometro || ahora < cronometro.hasta) return;
+    const serie = sesion?.ejercicios[cronometro.e]?.registro[cronometro.s];
+    setCronometro(null);
+    if (serie && !serie.completada) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      alternarSerie(cronometro.e, cronometro.s);
+    }
+  }, [ahora, cronometro, sesion, alternarSerie]);
+
+  // "Cómo se hace" abierto por ejercicio.
+  const [abiertas, setAbiertas] = useState<Record<number, boolean>>({});
 
   if (restaurando) {
     return (
@@ -251,7 +275,24 @@ export default function EntrenandoScreen() {
                     {ej.reemplazaA ? (
                       <Text style={[Type.caption, { color: brand.primaryDark }]}>En lugar de {ej.reemplazaA}</Text>
                     ) : null}
+                    {ej.anterior?.length ? (
+                      <Text style={[Type.caption, { color: colors.text, marginTop: 2 }]}>
+                        <Text style={{ color: colors.textSecondary }}>La vez anterior: </Text>
+                        {ej.anterior.map(textoSerie).join(' · ')}
+                      </Text>
+                    ) : null}
                   </View>
+                  {ej.instrucciones ? (
+                    <AnimatedPressable
+                      onPress={() => setAbiertas((a) => ({ ...a, [e]: !a[e] }))}
+                      hitSlop={8}
+                      scaleTo={0.85}
+                      accessibilityRole="button"
+                      accessibilityState={{ expanded: !!abiertas[e] }}
+                      accessibilityLabel={`Cómo se hace ${ej.nombre}`}>
+                      <Ionicons name={abiertas[e] ? 'information-circle' : 'information-circle-outline'} size={23} color={colors.tint} />
+                    </AnimatedPressable>
+                  ) : null}
                   <AnimatedPressable
                     onPress={() => setCambiando(e)}
                     hitSlop={8}
@@ -262,10 +303,23 @@ export default function EntrenandoScreen() {
                   </AnimatedPressable>
                 </View>
 
+                {ej.instrucciones && abiertas[e] ? (
+                  <Animated.View
+                    entering={reducir ? undefined : FadeIn.duration(160)}
+                    style={[styles.instrucciones, { backgroundColor: colors.background }]}>
+                    <Text style={[Type.caption, { color: colors.textSecondary }]}>CÓMO SE HACE</Text>
+                    <Text style={[Type.footnote, { color: colors.text }]}>{ej.instrucciones}</Text>
+                  </Animated.View>
+                ) : null}
+
                 <View style={styles.encabezado}>
                   <Text style={[styles.colSerie, Type.caption, { color: colors.textSecondary }]}>SERIE</Text>
-                  <Text style={[styles.colCampo, Type.caption, { color: colors.textSecondary }]}>REPS</Text>
-                  <Text style={[styles.colCampo, Type.caption, { color: colors.textSecondary }]}>KG</Text>
+                  <Text style={[styles.colCampo, Type.caption, { color: colors.textSecondary }]}>
+                    {esPorTiempo(ej) ? 'SEGUNDOS' : 'REPS'}
+                  </Text>
+                  <Text style={[styles.colCampo, Type.caption, { color: colors.textSecondary }]}>
+                    {esPorTiempo(ej) ? 'TIEMPO' : 'KG'}
+                  </Text>
                   <View style={styles.colCheck} />
                 </View>
 
@@ -291,23 +345,57 @@ export default function EntrenandoScreen() {
                         accessibilityHint="Mantén presionado para quitarla">
                         <Text style={[Type.headline, { color: colors.textSecondary, textAlign: 'center' }]}>{s + 1}</Text>
                       </AnimatedPressable>
-                      <View style={styles.colCampo}>
-                        <Contador
-                          valor={r.repeticiones}
-                          paso={1}
-                          etiqueta={`repeticiones de la serie ${s + 1}`}
-                          onCambio={(v) => actualizarSerie(e, s, { repeticiones: v })}
-                        />
-                      </View>
-                      <View style={styles.colCampo}>
-                        <Contador
-                          valor={r.peso}
-                          paso={sesion.pasoPeso}
-                          decimales
-                          etiqueta={`kilos de la serie ${s + 1}`}
-                          onCambio={(v) => actualizarSerie(e, s, { peso: v })}
-                        />
-                      </View>
+                      {esPorTiempo(ej) ? (
+                        <>
+                          <View style={styles.colCampo}>
+                            <Contador
+                              valor={r.segundos ?? null}
+                              paso={PASO_SEGUNDOS}
+                              etiqueta={`segundos de la serie ${s + 1}`}
+                              deshabilitado={cronometro?.e === e && cronometro.s === s}
+                              onCambio={(v) => actualizarSerie(e, s, { segundos: v })}
+                            />
+                          </View>
+                          <View style={styles.colCampo}>
+                            <Temporizador
+                              corriendo={cronometro?.e === e && cronometro.s === s}
+                              quedan={
+                                cronometro?.e === e && cronometro.s === s
+                                  ? Math.max(0, Math.ceil((cronometro.hasta - ahora) / 1000))
+                                  : r.segundos ?? 0
+                              }
+                              deshabilitado={r.completada || !r.segundos}
+                              onPress={() => {
+                                if (cronometro?.e === e && cronometro.s === s) setCronometro(null);
+                                else if (r.segundos && !r.completada) {
+                                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                                  setCronometro({ e, s, hasta: Date.now() + r.segundos * 1000 });
+                                }
+                              }}
+                            />
+                          </View>
+                        </>
+                      ) : (
+                        <>
+                          <View style={styles.colCampo}>
+                            <Contador
+                              valor={r.repeticiones}
+                              paso={1}
+                              etiqueta={`repeticiones de la serie ${s + 1}`}
+                              onCambio={(v) => actualizarSerie(e, s, { repeticiones: v })}
+                            />
+                          </View>
+                          <View style={styles.colCampo}>
+                            <Contador
+                              valor={r.peso}
+                              paso={sesion.pasoPeso}
+                              decimales
+                              etiqueta={`kilos de la serie ${s + 1}`}
+                              onCambio={(v) => actualizarSerie(e, s, { peso: v })}
+                            />
+                          </View>
+                        </>
+                      )}
                       <AnimatedPressable
                         onPress={() => {
                           if (!r.completada) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
@@ -365,6 +453,42 @@ export default function EntrenandoScreen() {
   );
 }
 
+// Botón de una serie por tiempo: ▶ 0:40 para empezar; corriendo, ■ con lo que queda.
+function Temporizador({
+  corriendo,
+  quedan,
+  deshabilitado,
+  onPress,
+}: {
+  corriendo: boolean;
+  quedan: number;
+  deshabilitado: boolean;
+  onPress: () => void;
+}) {
+  const { colors, brand } = useTheme();
+  return (
+    <AnimatedPressable
+      onPress={onPress}
+      disabled={deshabilitado && !corriendo}
+      scaleTo={0.94}
+      accessibilityRole="button"
+      accessibilityLabel={corriendo ? 'Detener el tiempo' : `Empezar ${quedan} segundos`}
+      style={[
+        styles.temporizador,
+        {
+          backgroundColor: corriendo ? brand.primary : colors.background,
+          borderColor: corriendo ? brand.primary : colors.border,
+          opacity: deshabilitado && !corriendo ? 0.5 : 1,
+        },
+      ]}>
+      <Ionicons name={corriendo ? 'stop' : 'play'} size={14} color={corriendo ? '#FFFFFF' : colors.tint} />
+      <Text style={[Type.headline, { color: corriendo ? '#FFFFFF' : colors.text, fontVariant: ['tabular-nums'] }]}>
+        {reloj(quedan)}
+      </Text>
+    </AnimatedPressable>
+  );
+}
+
 const styles = StyleSheet.create({
   safe: { flex: 1 },
   centrado: { alignItems: 'center', justifyContent: 'center' },
@@ -409,4 +533,14 @@ const styles = StyleSheet.create({
   check: { height: 42, borderRadius: Radius.sm, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   agregar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, paddingVertical: Spacing.sm },
   descartar: { alignItems: 'center', paddingVertical: Spacing.md },
+  instrucciones: { gap: 2, padding: Spacing.md, borderRadius: Radius.sm, marginBottom: Spacing.sm },
+  temporizador: {
+    height: 42,
+    borderWidth: 1,
+    borderRadius: Radius.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  },
 });

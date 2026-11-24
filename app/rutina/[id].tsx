@@ -16,9 +16,20 @@ import { AnimatedPressable } from '@/components/ui/AnimatedPressable';
 import { SelectorReemplazo } from '@/components/entrenamiento/SelectorReemplazo';
 import { Radius, Spacing, Type } from '@/constants/Theme';
 import { STARTER_ROUTINES } from '@/constants/StarterRoutines';
-import { fetchMyMachines, fetchMyRoutines, type Machine } from '@/lib/api';
+import { fetchMyMachines, fetchMyRoutines, fetchWorkouts, type Machine } from '@/lib/api';
 import { aplicarCambios, guardarCambios, leerCambios } from '@/lib/cambiosRutina';
-import { planDeRutina, planDeStarter, reemplazar, textoDescanso, type EjercicioPlan, type PlanRutina } from '@/lib/entrenamiento';
+import {
+  claveEjercicio,
+  planDeRutina,
+  planDeStarter,
+  reemplazar,
+  textoDescanso,
+  textoSerie,
+  ultimasSeries,
+  type EjercicioPlan,
+  type PlanRutina,
+  type SerieAnterior,
+} from '@/lib/entrenamiento';
 
 type Info = { coach?: string; nivel?: string; duracion?: string; descripcion?: string };
 
@@ -37,6 +48,8 @@ export default function RutinaScreen() {
   const [cambiando, setCambiando] = useState<number | null>(null);
   const [recordar, setRecordar] = useState(true);
   const [iniciando, setIniciando] = useState(false);
+  const [anteriores, setAnteriores] = useState<Record<string, SerieAnterior[]>>({});
+  const [abierto, setAbierto] = useState<string | null>(null);
 
   const userId = account?.id;
   const tieneGym = account?.hasGymAccess ?? false;
@@ -60,7 +73,9 @@ export default function RutinaScreen() {
           datos = { coach: rutina.coach, nivel: rutina.nivel, duracion: rutina.duracion, descripcion: rutina.descripcion };
         }
         const cambios = await leerCambios(userId, id);
+        const historial = await fetchWorkouts(userId).catch(() => []);
         if (cancelado) return;
+        setAnteriores(ultimasSeries(historial));
         setMachines(maquinas);
         setInfo(datos);
         setBase(nuevo);
@@ -175,6 +190,27 @@ export default function RutinaScreen() {
                 {e.reemplazaA ? (
                   <Text style={[Type.caption, { color: brand.primaryDark }]}>En lugar de {e.reemplazaA}</Text>
                 ) : null}
+                {anteriores[claveEjercicio(e.nombre)] ? (
+                  <Text style={[Type.caption, { color: colors.textSecondary }]}>
+                    La vez anterior: {anteriores[claveEjercicio(e.nombre)].map(textoSerie).join(' · ')}
+                  </Text>
+                ) : null}
+                {e.instrucciones ? (
+                  <AnimatedPressable
+                    onPress={() => setAbierto((a) => (a === e.clave ? null : e.clave))}
+                    hitSlop={6}
+                    accessibilityRole="button"
+                    accessibilityState={{ expanded: abierto === e.clave }}
+                    style={styles.comoSeHace}>
+                    <Ionicons name="information-circle-outline" size={15} color={colors.tint} />
+                    <Text style={[Type.caption, { color: colors.tint }]}>
+                      {abierto === e.clave ? 'Ocultar' : 'Cómo se hace'}
+                    </Text>
+                  </AnimatedPressable>
+                ) : null}
+                {e.instrucciones && abierto === e.clave ? (
+                  <Text style={[Type.footnote, { color: colors.text }]}>{e.instrucciones}</Text>
+                ) : null}
               </View>
               <AnimatedPressable
                 onPress={() => setCambiando(i)}
@@ -182,8 +218,7 @@ export default function RutinaScreen() {
                 accessibilityRole="button"
                 accessibilityLabel={`Cambiar ${e.nombre}`}
                 style={[styles.cambiar, { borderColor: colors.border }]}>
-                <Ionicons name="swap-horizontal" size={16} color={colors.tint} />
-                <Text style={[Type.caption, { color: colors.tint }]}>Cambiar</Text>
+                <Ionicons name="swap-horizontal" size={18} color={colors.tint} />
               </AnimatedPressable>
             </Card>
           </Reveal>
@@ -232,15 +267,16 @@ const styles = StyleSheet.create({
   badges: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
   tuVersion: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, padding: Spacing.md, borderRadius: Radius.md },
   ejercicio: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
+  comoSeHace: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
   numero: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   cambiar: {
-    flexDirection: 'row',
+    width: 40,
+    height: 40,
     alignItems: 'center',
-    gap: 4,
+    justifyContent: 'center',
     borderWidth: 1,
-    borderRadius: Radius.pill,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: 8,
+    borderRadius: 20,
+    alignSelf: 'flex-start',
   },
   recordar: {
     flexDirection: 'row',

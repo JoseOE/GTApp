@@ -12,7 +12,8 @@ import { StatTile } from '@/components/ui/StatTile';
 import { Reveal } from '@/components/ui/Reveal';
 import { TituloGrande } from '@/components/ui/TituloGrande';
 import { FontFamily, Radius, Spacing } from '@/constants/Theme';
-import { fetchWorkoutStats, type WorkoutStats } from '@/lib/api';
+import { fetchWorkoutStats, fetchWorkouts, type WorkoutSession, type WorkoutStats } from '@/lib/api';
+import { ProgresoPorEjercicio } from '@/components/progreso/ProgresoPorEjercicio';
 
 // Todo lo de esta pantalla sale de entrenamientos reales del usuario.
 // Nunca se bloquea: el progreso es suyo, con gimnasio o sin él.
@@ -20,6 +21,7 @@ export default function ProgressScreen() {
   const { colors, brand } = useTheme();
   const { account } = useAccount();
   const [stats, setStats] = useState<WorkoutStats | null>(null);
+  const [historial, setHistorial] = useState<WorkoutSession[]>([]);
 
   const userId = account?.id;
 
@@ -30,6 +32,11 @@ export default function ProgressScreen() {
       fetchWorkoutStats(userId)
         .then((data) => {
           if (!cancelado) setStats(data);
+        })
+        .catch(() => {});
+      fetchWorkouts(userId)
+        .then((data) => {
+          if (!cancelado) setHistorial(data);
         })
         .catch(() => {});
       return () => {
@@ -136,6 +143,11 @@ export default function ProgressScreen() {
             </Reveal>
           </>
         ) : null}
+
+        {/* Cómo va cada ejercicio, entrenamiento tras entrenamiento */}
+        <Reveal index={5}>
+          <ProgresoPorEjercicio historial={historial} />
+        </Reveal>
 
         {stats.ultimoEntrenamiento ? (
           <Text style={[styles.pie, { color: colors.textSecondary }]}>
