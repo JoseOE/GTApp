@@ -11,10 +11,10 @@ import { Spacing, Type } from '@/constants/Theme';
 import type { Renovacion } from '@/lib/renovacion';
 
 // Lo que se ve al volver del pago de la renovación:
-//  - la puerta se abrió por la renovación → "¡Listo! Pasa", con palomita y vibración;
-//  - ya está al día pero la alerta expiró → que pase su tarjeta;
-//  - pagó en efectivo en tienda → su ficha, la puerta no se abre todavía;
+//  - ya está al día → "¡Listo!", con palomita y vibración: que pase su tarjeta;
+//  - pagó en efectivo en tienda → su ficha; al pagarla, pasa su tarjeta;
 //  - el pago todavía se está confirmando → espera.
+// La puerta no se abre sola al pagar: siempre se vuelve a pasar la tarjeta.
 export function ResultadoRenovacion({
   datos,
   metodo,
@@ -34,8 +34,8 @@ export function ResultadoRenovacion({
         <Icono nombre="receipt" color={brand.warning} />
         <Text style={[Type.title, styles.centro, { color: colors.text }]}>Tu ficha está lista</Text>
         <Text style={[Type.body, styles.centro, { color: colors.textSecondary }]}>
-          Con efectivo en tienda la puerta no se abre en el momento. Paga la ficha: tu membresía se renueva en cuanto se
-          registre el pago y después pasas tu tarjeta.
+          Paga la ficha en la tienda: tu membresía se renueva en cuanto se registre el pago y después pasas tu tarjeta
+          en la puerta.
         </Text>
         {orderId ? (
           <PrimaryButton label="Ver ficha de pago" icon="barcode-outline" onPress={() => router.replace({ pathname: '/pedido/[orderId]', params: { orderId } })} />
@@ -44,9 +44,9 @@ export function ResultadoRenovacion({
     );
   }
 
-  const abierta = datos.puerta?.estado === 'APROBADA' && datos.puerta.abiertaPorRenovacion === true;
-  if (abierta) return <Listo titulo="¡Listo! Pasa, la puerta se abrió" texto="Tu membresía ya está renovada." />;
-  if (!datos.vencida) return <Listo titulo="Tu membresía está al día" texto="Pasa tu tarjeta en la puerta." />;
+  if (!datos.vencida) {
+    return <Listo titulo="¡Listo! Tu membresía está renovada" texto="Vuelve a pasar tu tarjeta en la puerta para entrar." />;
+  }
 
   return (
     <View style={styles.caja}>
@@ -56,7 +56,7 @@ export function ResultadoRenovacion({
       </Text>
       <Text style={[Type.body, styles.centro, { color: colors.textSecondary }]}>
         {confirmando
-          ? 'En cuanto se confirme, la puerta se abre sola.'
+          ? 'En cuanto se confirme, pasa tu tarjeta en la puerta.'
           : 'Si ya te cobraron, desliza hacia abajo para revisar otra vez o pregunta en recepción.'}
       </Text>
     </View>

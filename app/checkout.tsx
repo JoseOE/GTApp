@@ -83,7 +83,7 @@ export default function CheckoutScreen() {
   const [procesando, setProcesando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // renovacion=1: se paga la renovación preparada en "Renovar membresía";
-  // al terminar se vuelve ahí para ver si la puerta se abrió.
+  // al terminar se vuelve ahí para ver si ya quedó al día y pasar la tarjeta.
   const { renovacion } = useLocalSearchParams<{ renovacion?: string }>();
   const esRenovacion = renovacion === '1';
 
