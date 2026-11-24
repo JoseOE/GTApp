@@ -12,7 +12,7 @@ import { Reveal } from '@/components/ui/Reveal';
 import { StatTile } from '@/components/ui/StatTile';
 import { StateCard } from '@/components/ui/StateCard';
 import { Radius, Spacing, Type } from '@/constants/Theme';
-import { formatoPeso, reloj } from '@/lib/entrenamiento';
+import { reloj, textoSerie } from '@/lib/entrenamiento';
 
 // Al terminar: tiempo, volumen, series y reps, los récords que rompiste, los
 // músculos que trabajaste y el detalle de cada ejercicio.
@@ -124,10 +124,7 @@ export default function ResumenEntrenamientoScreen() {
                 <View style={styles.series}>
                   {d.series.map((s, j) => (
                     <View key={j} style={[styles.serie, { borderColor: colors.border, backgroundColor: colors.background }]}>
-                      <Text style={[Type.caption, { color: colors.text }]}>
-                        {s.peso ? `${formatoPeso(s.peso)} kg × ` : ''}
-                        {s.repeticiones ?? '–'}
-                      </Text>
+                      <Text style={[Type.caption, { color: colors.text }]}>{textoSerie(s)}</Text>
                     </View>
                   ))}
                 </View>

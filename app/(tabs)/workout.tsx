@@ -15,6 +15,7 @@ import { AnimatedPressable } from '@/components/ui/AnimatedPressable';
 import { TituloGrande } from '@/components/ui/TituloGrande';
 import { FontFamily, Spacing } from '@/constants/Theme';
 import { deleteWorkout, fetchWorkouts, type WorkoutSession } from '@/lib/api';
+import { textoSerie } from '@/lib/entrenamiento';
 
 // Entrenar nunca se bloquea: es lo que hace útil la app sin gimnasio.
 export default function WorkoutScreen() {
@@ -150,10 +151,7 @@ function WorkoutCard({
                     <View
                       key={j}
                       style={[styles.serieChip, { backgroundColor: colors.background, borderColor: colors.border }]}>
-                      <Text style={[styles.serieTexto, { color: colors.text }]}>
-                        {s.repeticiones ?? '-'}
-                        {s.peso ? ` × ${s.peso}kg` : ''}
-                      </Text>
+                      <Text style={[styles.serieTexto, { color: colors.text }]}>{textoSerie(s)}</Text>
                     </View>
                   ))}
                 </View>
